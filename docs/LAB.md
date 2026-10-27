@@ -69,10 +69,10 @@ It removes everything it created at the end. Result on 2026-10-27: 32 of 32 chec
 | Log-only mode, admin key                                  | Admitted, `deny … enforced:false` logged |
 | Key secrets in authorizer or Traefik logs                 | None                                   |
 
-The Go unit tests (`go test ./...`) cover the same rules against a real 9.5.5 output key
+The Go unit tests (`go test ./...`) cover the same rules against a 9.5.5 output key
 (`internal/authz/testdata`), plus caching, fail-closed lookups, metrics and log-only mode.
 
-## Real Elastic Defend agent (Windows Server 2025 VM, DC01)
+## Elastic Defend agent (Windows Server 2025 VM, DC01)
 
 1. On the VM, map `fleet-server`, `ingest-acme.local` and `ingest-globex.local` to
    `192.168.126.1` in the hosts file. Port 9200 on that address is closed, so the agent
@@ -106,7 +106,7 @@ Observed:
 - **Alerts:** a renamed `cmd.exe` run as `C:\Users\Public\…\svchost.exe` was prevented and
   produced three behavior alerts in `logs-endpoint.alerts-acme`, which the Endpoint Security rule
   promoted them to `.alerts-security.alerts-acme`.
-- **Cross-tenant with the real key:** pointing the `acme` output at
-  `ingest-globex.local` made the agent present its real key at the globex host. The
+- **Cross-tenant with the agent's key:** pointing the `acme` output at
+  `ingest-globex.local` made the agent present its key at the globex host. The
   authorizer denied it (`index_outside_tenant`, 403). Restoring the output resumed
   ingest.

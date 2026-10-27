@@ -29,7 +29,7 @@ Traefik sets the tenant: each tenant hostname has its own middleware with a fixe
 ## How a key is matched to the tenant
 
 `fleet-authz` looks up the key id from the `Authorization` header (the part before `:`).
-Elasticsearch checks the secret later. A real Defend + System key on 9.5.5, shortened:
+Elasticsearch checks the secret later. The key of an agent with Elastic Defend and System, on 9.5.5:
 
 ```json
 {
@@ -124,6 +124,6 @@ gh attestation verify oci://ghcr.io/zu3st/fleet-ingest-gateway@sha256:<digest> -
 docker run --rm -u "$(id -u):$(id -g)" -e HOME=/tmp -e GOCACHE=/tmp/gocache -v "$PWD":/src -w /src golang:1.27.3-alpine go test ./...
 ```
 
-- [docs/LAB.md](docs/LAB.md): dev stack, end-to-end tests, real Defend agent results
+- [docs/LAB.md](docs/LAB.md): dev stack, end-to-end tests, Elastic Defend on Windows
 - [docs/PRODUCTION.md](docs/PRODUCTION.md): prerequisites, rollout, known limits
 - [docs/DEPENDENCIES.md](docs/DEPENDENCIES.md): dependencies and why they are trusted

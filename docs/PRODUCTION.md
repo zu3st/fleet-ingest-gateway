@@ -117,7 +117,7 @@ Prerequisites).
 1. **Verify the key schema** on the production version: dump one output key per
    integration in use with `GET _security/api_key?id=<id>` and check the fields and the
    tenant suffix on every index name. Done for 9.5.5 with Elastic Defend and System (see
-   [LAB.md](LAB.md#real-elastic-defend-agent-windows-server-2025-vm-dc01)).
+   [LAB.md](LAB.md#elastic-defend-agent-windows-server-2025-vm-dc01)).
 2. **Deploy one tenant in log-only mode** (`MODE=log-only`) for about a week. The
    authorizer allows everything and logs the decision it would have made.
 3. **Review the logs.** Paths outside the allowlist show up as 404s in Traefik's access
