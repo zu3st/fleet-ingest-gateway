@@ -35,7 +35,7 @@ GATEWAY_BIND=192.168.126.1 docker compose -f dev/compose.yaml up -d --build
    gateway). Elasticsearch itself is not published to the VMs.
 
 The lab's Elasticsearch has no TLS, so in the dev stack Traefik forwards to it over plain
-HTTP inside the Docker network. The Kubernetes rendering uses HTTPS with the ECK CA.
+HTTP inside the Docker network. The Kubernetes example uses HTTPS with the ECK CA.
 
 ## End-to-end tests
 

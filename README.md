@@ -75,22 +75,17 @@ Endpoints: `GET /check?tenant=<namespace>` (forward auth), `/healthz`, `/readyz`
 
 ## Traefik configuration
 
-Both forms are rendered from one values file per environment by `cmd/render`:
+Plain Traefik configuration, written by hand:
 
-- **Docker (file provider):** `deploy/values/dev.json` →
-  `dev/traefik/dynamic/gateway.yaml`
-- **Kubernetes / RKE2 (CRDs):** `deploy/values/example-rke2.json` →
-  `deploy/k8s/example-rke2-tenants.yaml` (`IngressRoute`, `Middleware`,
-  `ServersTransport` with the ECK CA, `TLSOption`)
+- **Docker (file provider):** `dev/traefik/dynamic/gateway.yaml`
+- **Kubernetes / RKE2 (CRDs):** `deploy/k8s/example-rke2-tenants.yaml` (`IngressRoute`,
+  `Middleware`, `ServersTransport` with the ECK CA, `TLSOption`)
 
-```bash
-./scripts/render.sh
-```
-
-Onboarding a tenant means adding one entry (`name`, `host`, `certSecret`) to the values
-file and rendering again. `deploy/k8s/fleet-authz.yaml` runs the authorizer (2
-replicas, ClusterIP, NetworkPolicy allowing only Traefik) and
-`deploy/k8s/rke2-traefik-config.yaml` configures RKE2's Traefik.
+Onboarding a tenant means copying one tenant's route and `fleet-authz-<tenant>`
+middleware and changing the name, hostname and certificate.
+`deploy/k8s/fleet-authz.yaml` runs the authorizer (2 replicas, ClusterIP, NetworkPolicy
+allowing only Traefik). The Traefik settings the gateway relies on are listed in
+[docs/PRODUCTION.md](docs/PRODUCTION.md#prerequisites).
 
 ## Development
 

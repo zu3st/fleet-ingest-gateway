@@ -1,7 +1,7 @@
 # Production notes
 
 The design targets Traefik on RKE2 in front of ECK. The Kubernetes manifests in
-`deploy/k8s/` are rendered and parse as YAML, but have not been applied to a cluster yet.
+`deploy/k8s/` parse as YAML, but have not been applied to a cluster yet.
 
 ## Prerequisites
 
@@ -14,13 +14,12 @@ The design targets Traefik on RKE2 in front of ECK. The Kubernetes manifests in
 - [ ] Kibana at or above the fix for CVE-2026-72631 (9.5.1); confirm the fix version for
       CVE-2026-72632 and that 9.5.5 includes it.
 - [ ] Authorizer API key with `read_security` only.
-- [ ] RKE2 runs Traefik as its ingress controller, configured through `HelmChartConfig`
-      (`deploy/k8s/rke2-traefik-config.yaml`).
 - [ ] Tenant `IngressRoute`s and middlewares live in the Elasticsearch namespace;
       `allowCrossNamespace` stays off.
-- [ ] `forwardedHeaders.trustedIPs` restricted on the `websecure` entrypoint, and
-      `aliasHeadersStrategy: reject` set on it (Traefik 3.7 otherwise forwards
-      `es_security_runas_user`-style aliases of headers it manages).
+- [ ] Traefik's `websecure` entrypoint has `http.aliasHeadersStrategy: reject`
+      (Traefik 3.7 otherwise forwards `es_security_runas_user`-style aliases of headers
+      it manages) and `forwardedHeaders.trustedIPs` limited to the load balancer, if any.
+      How these are set depends on how Traefik is deployed.
 - [ ] ECK's Elasticsearch HTTP service stays ClusterIP. NetworkPolicy: only Traefik and
       internal consumers (Kibana, Fleet Server) reach port 9200; only Traefik reaches the
       authorizer (`deploy/k8s/fleet-authz.yaml` has the authorizer side).
