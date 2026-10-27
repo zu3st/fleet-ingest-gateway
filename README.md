@@ -78,8 +78,8 @@ Endpoints: `GET /check?tenant=<namespace>` (forward auth), `/healthz`, `/readyz`
 Plain Traefik configuration, written by hand:
 
 - **Docker (file provider):** `dev/traefik/dynamic/gateway.yaml`
-- **Kubernetes / RKE2 (CRDs):** `deploy/k8s/example-rke2-tenants.yaml` (`IngressRoute`,
-  `Middleware`, `ServersTransport` with the ECK CA, `TLSOption`)
+- **Kubernetes / RKE2 (CRDs):** an example with placeholders in
+  [docs/PRODUCTION.md](docs/PRODUCTION.md#traefik-configuration-kubernetes)
 
 Onboarding a tenant means copying one tenant's route and `fleet-authz-<tenant>`
 middleware and changing the name, hostname and certificate.

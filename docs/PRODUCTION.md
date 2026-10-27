@@ -1,7 +1,7 @@
 # Production notes
 
-The design targets Traefik on RKE2 in front of ECK. The Kubernetes manifests in
-`deploy/k8s/` parse as YAML, but have not been applied to a cluster yet.
+The design targets Traefik on RKE2 in front of ECK. The Traefik example below and
+`deploy/k8s/fleet-authz.yaml` parse as YAML, but have not been applied to a cluster yet.
 
 ## Prerequisites
 
@@ -24,6 +24,89 @@ The design targets Traefik on RKE2 in front of ECK. The Kubernetes manifests in
       internal consumers (Kibana, Fleet Server) reach port 9200; only Traefik reaches the
       authorizer (`deploy/k8s/fleet-authz.yaml` has the authorizer side).
 - [ ] No standalone agents or other non-Fleet writers on the tenant ingest hostnames.
+
+## Traefik configuration (Kubernetes)
+
+Replace the placeholders: `<es-namespace>` is the namespace of the ECK cluster,
+`<es-name>` its name (ECK creates the service `<es-name>-es-http` and the CA secret
+`<es-name>-es-http-certs-public`), `<tenant>` the tenant's data stream namespace,
+`<ingest-host>` its ingest hostname and `<tls-secret>` the certificate secret for that
+hostname.
+
+Shared, once per cluster:
+
+```yaml
+apiVersion: traefik.io/v1alpha1
+kind: Middleware
+metadata:
+  name: strip-runas
+  namespace: <es-namespace>
+spec:
+  headers:
+    customRequestHeaders:
+      es-security-runas-user: ""
+---
+apiVersion: traefik.io/v1alpha1
+kind: ServersTransport
+metadata:
+  name: elasticsearch
+  namespace: <es-namespace>
+spec:
+  serverName: <es-name>-es-http.<es-namespace>.svc
+  rootCAs:
+    - secret: <es-name>-es-http-certs-public
+---
+apiVersion: traefik.io/v1alpha1
+kind: TLSOption
+metadata:
+  name: ingest
+  namespace: <es-namespace>
+spec:
+  minVersion: VersionTLS12
+  sniStrict: true
+```
+
+Per tenant (repeat for each):
+
+```yaml
+apiVersion: traefik.io/v1alpha1
+kind: Middleware
+metadata:
+  name: fleet-authz-<tenant>
+  namespace: <es-namespace>
+spec:
+  forwardAuth:
+    address: http://fleet-authz.<es-namespace>.svc:8080/check?tenant=<tenant>
+    trustForwardHeader: false
+    maxResponseBodySize: 4096
+---
+apiVersion: traefik.io/v1alpha1
+kind: IngressRoute
+metadata:
+  name: ingest-<tenant>
+  namespace: <es-namespace>
+spec:
+  entryPoints: [websecure]
+  routes:
+    - kind: Rule
+      match: 'Host(`<ingest-host>`) && ((Path(`/_bulk`) && Method(`POST`)) || (Path(`/`) && (Method(`GET`) || Method(`HEAD`))))'
+      middlewares:
+        - name: strip-runas
+        - name: fleet-authz-<tenant>
+      services:
+        - name: <es-name>-es-http
+          port: 9200
+          scheme: https
+          serversTransport: elasticsearch
+  tls:
+    secretName: <tls-secret>
+    options:
+      name: ingest
+```
+
+The `match` rule is the path allowlist; Traefik answers 404 to anything else. On
+Traefik itself, set `--entryPoints.websecure.http.aliasHeadersStrategy=reject` (see
+Prerequisites).
 
 ## Rollout
 
