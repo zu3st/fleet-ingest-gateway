@@ -81,9 +81,14 @@ The Go unit tests (`go test ./...`) cover the same rules against a real 9.5.5 ou
    `elastic-agent.exe install --non-interactive --url=https://fleet-server:8220
    --certificate-authorities=C:\path\to\ca.crt --enrollment-token=<ACME_WORKSTATIONS_TOKEN>`.
 
-   DC01 was enrolled earlier with `--insecure` over plain HTTP. After the switch to the
-   TLS Fleet Server host it checks in over `https://fleet-server:8220`, but keeps
-   `verification_mode: none` from that enrollment until it is enrolled again.
+   DC01 was first enrolled with `--insecure` over plain HTTP, then enrolled again with
+   `elastic-agent.exe enroll --force` and the options above. Its Fleet connection now
+   verifies the certificate (`verification_mode: full`, CA
+   `C:\ProgramData\fleet-gw\ca.crt`); the old agent was unenrolled and its keys revoked.
+
+   With a CA on the Fleet Server host, Fleet adds an output
+   `fleetserver-output-<host id>` and issues each agent an output key for it with no
+   hosts and no privileges; the gateway would reject it (`no_index_grants`).
 
 Observed:
 
