@@ -1,0 +1,8 @@
+{
+  "tenants": [
+    { "name": "acme", "host": "ingest-acme.local", "certSecret": "ingest-acme" },
+    { "name": "globex", "host": "ingest-globex.local", "certSecret": "ingest-globex" }
+  ],
+  "authorizer": "http://fleet-authz:8080",
+  "elasticsearch": "http://elasticsearch:9200"
+}

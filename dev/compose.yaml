@@ -1,0 +1,59 @@
+# Dev stack: Traefik (file provider) in front of the existing Elastic lab, plus fleet-authz.
+#
+#   dev/gen-certs.sh                    # once: local CA and per-tenant certificates
+#   dev/lab-setup.sh                    # authorizer key, tenant outputs, policies
+#   docker compose -f dev/compose.yaml up -d --build
+#
+# GATEWAY_BIND sets the host address Traefik listens on (default 127.0.0.1);
+# AUTHZ_MODE switches the authorizer to log-only.
+name: fleet-ingest-gateway
+
+x-hardening: &hardening
+  read_only: true
+  cap_drop: [ALL]
+  security_opt: [no-new-privileges:true]
+  restart: unless-stopped
+
+services:
+  traefik:
+    <<: *hardening
+    image: traefik:v3.7.16@sha256:1336e85aaed293bd63d005086e0dd013b04078b26aaeb1c18b26a2f928af7e65
+    user: '65532:65532'
+    volumes:
+      - ./traefik/traefik.yaml:/etc/traefik/traefik.yaml:ro
+      - ./traefik/dynamic:/etc/traefik/dynamic:ro
+      - ./certs:/certs:ro
+    ports:
+      - '${GATEWAY_BIND:-127.0.0.1}:8443:8443'
+      - '${GATEWAY_BIND:-127.0.0.1}:8220:8220' # lab only: Fleet Server for VMs
+    networks: [gateway, elastic]
+    healthcheck:
+      test: ['CMD', 'traefik', 'healthcheck', '--ping']
+      interval: 10s
+    depends_on:
+      fleet-authz: { condition: service_healthy }
+
+  fleet-authz:
+    <<: *hardening
+    build: ..
+    image: fleet-authz:dev
+    environment:
+      ES_URL: http://elasticsearch:9200
+      ES_API_KEY_FILE: /run/secrets/es_api_key
+      MODE: ${AUTHZ_MODE:-enforce}
+      TENANTS: acme,globex
+    secrets:
+      - source: authz_api_key
+        target: es_api_key
+    networks: [gateway, elastic]
+
+networks:
+  gateway:
+    internal: true
+  elastic:
+    external: true
+    name: ${LAB_ELASTIC_NETWORK:-mssp-lab_default}
+
+secrets:
+  authz_api_key:
+    file: ./secrets/fleet-authz-api-key

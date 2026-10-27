@@ -1,0 +1,35 @@
+# Static Traefik configuration for the Docker dev stack.
+entryPoints:
+  websecure:
+    address: ':8443'
+    # Do not trust X-Forwarded-* from clients (set trustedIPs to the load balancer if one is in front).
+    forwardedHeaders:
+      insecure: false
+    http:
+      # Refuse headers that alias another one (es_security_runas_user for es-security-runas-user).
+      aliasHeadersStrategy: reject
+  # Lab only: plain TCP to Fleet Server for VMs, see dynamic/lab-fleet-server.yaml.
+  fleet:
+    address: ':8220'
+  ping:
+    address: '127.0.0.1:8082'
+
+ping:
+  entryPoint: ping
+
+providers:
+  file:
+    directory: /etc/traefik/dynamic
+    watch: true
+
+log:
+  level: INFO
+  format: json
+
+# Headers are dropped from the access log by default, so API keys never appear there.
+accessLog:
+  format: json
+
+global:
+  checkNewVersion: false
+  sendAnonymousUsage: false

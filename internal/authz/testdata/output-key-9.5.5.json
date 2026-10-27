@@ -1,0 +1,698 @@
+{
+  "api_keys": [
+    {
+      "id": "TESTkeyid000000000001",
+      "name": "00000000-0000-4000-8000-000000000001:default",
+      "type": "rest",
+      "creation": 1793056998563,
+      "invalidated": false,
+      "username": "elastic/fleet-server",
+      "realm": "_service_account",
+      "realm_type": "_service_account",
+      "metadata": {
+        "output_name": "default",
+        "agent_id": "00000000-0000-4000-8000-000000000001",
+        "managed_by": "fleet-server",
+        "managed": true,
+        "type": "output"
+      },
+      "role_descriptors": {
+        "policy-16": {
+          "cluster": [],
+          "indices": [
+            {
+              "names": [
+                ".logs-endpoint.action.responses-acme"
+              ],
+              "privileges": [
+                "auto_configure",
+                "create_doc"
+              ],
+              "allow_restricted_indices": false
+            },
+            {
+              "names": [
+                ".logs-endpoint.actions-acme"
+              ],
+              "privileges": [
+                "auto_configure",
+                "create_doc"
+              ],
+              "allow_restricted_indices": false
+            },
+            {
+              "names": [
+                "logs-endpoint.alerts-acme"
+              ],
+              "privileges": [
+                "auto_configure",
+                "create_doc"
+              ],
+              "allow_restricted_indices": false
+            },
+            {
+              "names": [
+                "logs-endpoint.events.api-acme"
+              ],
+              "privileges": [
+                "auto_configure",
+                "create_doc"
+              ],
+              "allow_restricted_indices": false
+            },
+            {
+              "names": [
+                ".logs-endpoint.diagnostic.collection-acme"
+              ],
+              "privileges": [
+                "auto_configure",
+                "create_doc"
+              ],
+              "allow_restricted_indices": false
+            },
+            {
+              "names": [
+                "logs-endpoint.events.device-acme"
+              ],
+              "privileges": [
+                "auto_configure",
+                "create_doc"
+              ],
+              "allow_restricted_indices": false
+            },
+            {
+              "names": [
+                "logs-endpoint.events.file-acme"
+              ],
+              "privileges": [
+                "auto_configure",
+                "create_doc"
+              ],
+              "allow_restricted_indices": false
+            },
+            {
+              "names": [
+                ".logs-endpoint.heartbeat-acme"
+              ],
+              "privileges": [
+                "auto_configure",
+                "create_doc"
+              ],
+              "allow_restricted_indices": false
+            },
+            {
+              "names": [
+                "logs-endpoint.events.library-acme"
+              ],
+              "privileges": [
+                "auto_configure",
+                "create_doc"
+              ],
+              "allow_restricted_indices": false
+            },
+            {
+              "names": [
+                "metrics-endpoint.metadata-acme"
+              ],
+              "privileges": [
+                "auto_configure",
+                "create_doc"
+              ],
+              "allow_restricted_indices": false
+            },
+            {
+              "names": [
+                "metrics-endpoint.metrics-acme"
+              ],
+              "privileges": [
+                "auto_configure",
+                "create_doc"
+              ],
+              "allow_restricted_indices": false
+            },
+            {
+              "names": [
+                "logs-endpoint.events.network-acme"
+              ],
+              "privileges": [
+                "auto_configure",
+                "create_doc"
+              ],
+              "allow_restricted_indices": false
+            },
+            {
+              "names": [
+                "metrics-endpoint.policy-acme"
+              ],
+              "privileges": [
+                "auto_configure",
+                "create_doc"
+              ],
+              "allow_restricted_indices": false
+            },
+            {
+              "names": [
+                "logs-endpoint.events.process-acme"
+              ],
+              "privileges": [
+                "auto_configure",
+                "create_doc"
+              ],
+              "allow_restricted_indices": false
+            },
+            {
+              "names": [
+                "logs-endpoint.events.registry-acme"
+              ],
+              "privileges": [
+                "auto_configure",
+                "create_doc"
+              ],
+              "allow_restricted_indices": false
+            },
+            {
+              "names": [
+                "logs-endpoint.events.security-acme"
+              ],
+              "privileges": [
+                "auto_configure",
+                "create_doc"
+              ],
+              "allow_restricted_indices": false
+            }
+          ],
+          "applications": [],
+          "run_as": [],
+          "metadata": {},
+          "transient_metadata": {
+            "enabled": true
+          }
+        },
+        "policy-18": {
+          "cluster": [],
+          "indices": [
+            {
+              "names": [
+                "logs-system.auth-acme"
+              ],
+              "privileges": [
+                "auto_configure",
+                "create_doc"
+              ],
+              "allow_restricted_indices": false
+            },
+            {
+              "names": [
+                "logs-system.syslog-acme"
+              ],
+              "privileges": [
+                "auto_configure",
+                "create_doc"
+              ],
+              "allow_restricted_indices": false
+            },
+            {
+              "names": [
+                "logs-system.auth-acme"
+              ],
+              "privileges": [
+                "auto_configure",
+                "create_doc"
+              ],
+              "allow_restricted_indices": false
+            },
+            {
+              "names": [
+                "logs-system.syslog-acme"
+              ],
+              "privileges": [
+                "auto_configure",
+                "create_doc"
+              ],
+              "allow_restricted_indices": false
+            },
+            {
+              "names": [
+                "logs-system.application-acme"
+              ],
+              "privileges": [
+                "auto_configure",
+                "create_doc"
+              ],
+              "allow_restricted_indices": false
+            },
+            {
+              "names": [
+                "logs-system.security-acme"
+              ],
+              "privileges": [
+                "auto_configure",
+                "create_doc"
+              ],
+              "allow_restricted_indices": false
+            },
+            {
+              "names": [
+                "logs-system.system-acme"
+              ],
+              "privileges": [
+                "auto_configure",
+                "create_doc"
+              ],
+              "allow_restricted_indices": false
+            },
+            {
+              "names": [
+                "metrics-system.cpu-acme"
+              ],
+              "privileges": [
+                "auto_configure",
+                "create_doc"
+              ],
+              "allow_restricted_indices": false
+            },
+            {
+              "names": [
+                "metrics-system.diskio-acme"
+              ],
+              "privileges": [
+                "auto_configure",
+                "create_doc"
+              ],
+              "allow_restricted_indices": false
+            },
+            {
+              "names": [
+                "metrics-system.filesystem-acme"
+              ],
+              "privileges": [
+                "auto_configure",
+                "create_doc"
+              ],
+              "allow_restricted_indices": false
+            },
+            {
+              "names": [
+                "metrics-system.fsstat-acme"
+              ],
+              "privileges": [
+                "auto_configure",
+                "create_doc"
+              ],
+              "allow_restricted_indices": false
+            },
+            {
+              "names": [
+                "metrics-system.load-acme"
+              ],
+              "privileges": [
+                "auto_configure",
+                "create_doc"
+              ],
+              "allow_restricted_indices": false
+            },
+            {
+              "names": [
+                "metrics-system.memory-acme"
+              ],
+              "privileges": [
+                "auto_configure",
+                "create_doc"
+              ],
+              "allow_restricted_indices": false
+            },
+            {
+              "names": [
+                "metrics-system.network-acme"
+              ],
+              "privileges": [
+                "auto_configure",
+                "create_doc"
+              ],
+              "allow_restricted_indices": false
+            },
+            {
+              "names": [
+                "metrics-system.process-acme"
+              ],
+              "privileges": [
+                "auto_configure",
+                "create_doc"
+              ],
+              "allow_restricted_indices": false
+            },
+            {
+              "names": [
+                "metrics-system.process.summary-acme"
+              ],
+              "privileges": [
+                "auto_configure",
+                "create_doc"
+              ],
+              "allow_restricted_indices": false
+            },
+            {
+              "names": [
+                "metrics-system.socket_summary-acme"
+              ],
+              "privileges": [
+                "auto_configure",
+                "create_doc"
+              ],
+              "allow_restricted_indices": false
+            },
+            {
+              "names": [
+                "metrics-system.uptime-acme"
+              ],
+              "privileges": [
+                "auto_configure",
+                "create_doc"
+              ],
+              "allow_restricted_indices": false
+            }
+          ],
+          "applications": [],
+          "run_as": [],
+          "metadata": {},
+          "transient_metadata": {
+            "enabled": true
+          }
+        },
+        "_elastic_agent_checks": {
+          "cluster": [
+            "monitor"
+          ],
+          "indices": [],
+          "applications": [],
+          "run_as": [],
+          "metadata": {},
+          "transient_metadata": {
+            "enabled": true
+          }
+        },
+        "_elastic_agent_monitoring": {
+          "cluster": [],
+          "indices": [
+            {
+              "names": [
+                "logs-elastic_agent.apm_server-acme"
+              ],
+              "privileges": [
+                "auto_configure",
+                "create_doc"
+              ],
+              "allow_restricted_indices": false
+            },
+            {
+              "names": [
+                "metrics-elastic_agent.apm_server-acme"
+              ],
+              "privileges": [
+                "auto_configure",
+                "create_doc"
+              ],
+              "allow_restricted_indices": false
+            },
+            {
+              "names": [
+                "logs-elastic_agent.auditbeat-acme"
+              ],
+              "privileges": [
+                "auto_configure",
+                "create_doc"
+              ],
+              "allow_restricted_indices": false
+            },
+            {
+              "names": [
+                "metrics-elastic_agent.auditbeat-acme"
+              ],
+              "privileges": [
+                "auto_configure",
+                "create_doc"
+              ],
+              "allow_restricted_indices": false
+            },
+            {
+              "names": [
+                "logs-elastic_agent.cloud_defend-acme"
+              ],
+              "privileges": [
+                "auto_configure",
+                "create_doc"
+              ],
+              "allow_restricted_indices": false
+            },
+            {
+              "names": [
+                "logs-elastic_agent.cloudbeat-acme"
+              ],
+              "privileges": [
+                "auto_configure",
+                "create_doc"
+              ],
+              "allow_restricted_indices": false
+            },
+            {
+              "names": [
+                "metrics-elastic_agent.cloudbeat-acme"
+              ],
+              "privileges": [
+                "auto_configure",
+                "create_doc"
+              ],
+              "allow_restricted_indices": false
+            },
+            {
+              "names": [
+                "logs-elastic_agent-acme"
+              ],
+              "privileges": [
+                "auto_configure",
+                "create_doc"
+              ],
+              "allow_restricted_indices": false
+            },
+            {
+              "names": [
+                "metrics-elastic_agent.elastic_agent-acme"
+              ],
+              "privileges": [
+                "auto_configure",
+                "create_doc"
+              ],
+              "allow_restricted_indices": false
+            },
+            {
+              "names": [
+                "metrics-elastic_agent.endpoint_security-acme"
+              ],
+              "privileges": [
+                "auto_configure",
+                "create_doc"
+              ],
+              "allow_restricted_indices": false
+            },
+            {
+              "names": [
+                "logs-elastic_agent.endpoint_security-acme"
+              ],
+              "privileges": [
+                "auto_configure",
+                "create_doc"
+              ],
+              "allow_restricted_indices": false
+            },
+            {
+              "names": [
+                "logs-elastic_agent.filebeat_input-acme"
+              ],
+              "privileges": [
+                "auto_configure",
+                "create_doc"
+              ],
+              "allow_restricted_indices": false
+            },
+            {
+              "names": [
+                "metrics-elastic_agent.filebeat_input-acme"
+              ],
+              "privileges": [
+                "auto_configure",
+                "create_doc"
+              ],
+              "allow_restricted_indices": false
+            },
+            {
+              "names": [
+                "logs-elastic_agent.filebeat-acme"
+              ],
+              "privileges": [
+                "auto_configure",
+                "create_doc"
+              ],
+              "allow_restricted_indices": false
+            },
+            {
+              "names": [
+                "metrics-elastic_agent.filebeat-acme"
+              ],
+              "privileges": [
+                "auto_configure",
+                "create_doc"
+              ],
+              "allow_restricted_indices": false
+            },
+            {
+              "names": [
+                "logs-elastic_agent.fleet_server-acme"
+              ],
+              "privileges": [
+                "auto_configure",
+                "create_doc"
+              ],
+              "allow_restricted_indices": false
+            },
+            {
+              "names": [
+                "metrics-elastic_agent.fleet_server-acme"
+              ],
+              "privileges": [
+                "auto_configure",
+                "create_doc"
+              ],
+              "allow_restricted_indices": false
+            },
+            {
+              "names": [
+                "logs-elastic_agent.heartbeat-acme"
+              ],
+              "privileges": [
+                "auto_configure",
+                "create_doc"
+              ],
+              "allow_restricted_indices": false
+            },
+            {
+              "names": [
+                "metrics-elastic_agent.heartbeat-acme"
+              ],
+              "privileges": [
+                "auto_configure",
+                "create_doc"
+              ],
+              "allow_restricted_indices": false
+            },
+            {
+              "names": [
+                "logs-elastic_agent.metricbeat-acme"
+              ],
+              "privileges": [
+                "auto_configure",
+                "create_doc"
+              ],
+              "allow_restricted_indices": false
+            },
+            {
+              "names": [
+                "metrics-elastic_agent.metricbeat-acme"
+              ],
+              "privileges": [
+                "auto_configure",
+                "create_doc"
+              ],
+              "allow_restricted_indices": false
+            },
+            {
+              "names": [
+                "logs-elastic_agent.osquerybeat-acme"
+              ],
+              "privileges": [
+                "auto_configure",
+                "create_doc"
+              ],
+              "allow_restricted_indices": false
+            },
+            {
+              "names": [
+                "metrics-elastic_agent.osquerybeat-acme"
+              ],
+              "privileges": [
+                "auto_configure",
+                "create_doc"
+              ],
+              "allow_restricted_indices": false
+            },
+            {
+              "names": [
+                "logs-elastic_agent.packetbeat-acme"
+              ],
+              "privileges": [
+                "auto_configure",
+                "create_doc"
+              ],
+              "allow_restricted_indices": false
+            },
+            {
+              "names": [
+                "metrics-elastic_agent.packetbeat-acme"
+              ],
+              "privileges": [
+                "auto_configure",
+                "create_doc"
+              ],
+              "allow_restricted_indices": false
+            },
+            {
+              "names": [
+                "logs-elastic_agent.pf_elastic_collector-acme"
+              ],
+              "privileges": [
+                "auto_configure",
+                "create_doc"
+              ],
+              "allow_restricted_indices": false
+            },
+            {
+              "names": [
+                "logs-elastic_agent.pf_elastic_symbolizer-acme"
+              ],
+              "privileges": [
+                "auto_configure",
+                "create_doc"
+              ],
+              "allow_restricted_indices": false
+            },
+            {
+              "names": [
+                "logs-elastic_agent.pf_host_agent-acme"
+              ],
+              "privileges": [
+                "auto_configure",
+                "create_doc"
+              ],
+              "allow_restricted_indices": false
+            },
+            {
+              "names": [
+                "logs-elastic_agent.status_change-acme"
+              ],
+              "privileges": [
+                "auto_configure",
+                "create_doc"
+              ],
+              "allow_restricted_indices": false
+            }
+          ],
+          "applications": [],
+          "run_as": [],
+          "metadata": {},
+          "transient_metadata": {
+            "enabled": true
+          }
+        }
+      }
+    }
+  ]
+}

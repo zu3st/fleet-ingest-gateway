@@ -1,0 +1,18 @@
+# RKE2's bundled Traefik, configured for the ingest gateway. Adjust trustedIPs to
+# the load balancer in front of the nodes, if any.
+apiVersion: helm.cattle.io/v1
+kind: HelmChartConfig
+metadata:
+  name: rke2-traefik
+  namespace: kube-system
+spec:
+  valuesContent: |-
+    providers:
+      kubernetesCRD:
+        allowCrossNamespace: false
+    ports:
+      websecure:
+        forwardedHeaders:
+          trustedIPs: []
+    additionalArguments:
+      - --entryPoints.websecure.http.aliasHeadersStrategy=reject

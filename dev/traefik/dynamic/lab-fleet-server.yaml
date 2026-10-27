@@ -1,0 +1,12 @@
+# Lab only, not part of the gateway: lets enrolled VMs reach the lab's Fleet Server
+# (plain HTTP) through the same host address as the ingest gateway.
+tcp:
+  routers:
+    lab-fleet-server:
+      entryPoints: [fleet]
+      rule: HostSNI(`*`)
+      service: lab-fleet-server
+  services:
+    lab-fleet-server:
+      loadBalancer:
+        servers: [{ address: 'fleet-server:8220' }]
