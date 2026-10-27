@@ -12,8 +12,7 @@ namespace.
 | Tenant B agent key at tenant A's host   | 403                                                              |
 | Tenant A agent key at tenant A's host   | Admitted; Elasticsearch limits it to create-only writes in `*-a` |
 
-The gateway does not read `_bulk` bodies. Elasticsearch verifies the key secret and
-enforces the index privileges; the gateway only decides which keys may try.
+Elasticsearch verifies the key secret and enforces the index privileges; the gateway only decides which keys may try.
 
 ## How it works
 
@@ -44,7 +43,7 @@ agent ──TLS──▶ Traefik ── route: host + path allowlist
 Accepted keys are cached for 2 minutes and rejected keys for 10 seconds. A revoked key
 still fails at once, in Elasticsearch. If Elasticsearch cannot be asked, the request is
 denied with 503. Each uncached decision is logged as one JSON line with decision, reason,
-key id, agent id and tenant; the key secret is never logged.
+key id, agent id and tenant.
 
 ## Configuration
 

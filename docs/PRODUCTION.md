@@ -123,7 +123,7 @@ Prerequisites).
 4. **Enforce for that tenant.** Alert on denials of keys owned by `elastic/fleet-server`
    (reasons `not_fleet_managed`, `not_output_key`, `no_agent_id`, `no_index_grants`,
    `index_outside_tenant` in `fleet_authz_decisions_total`); they usually mean a schema
-   change or policy drift, not an attack.
+   change or policy drift.
 5. **Repeat per tenant**, then remove any direct route to Elasticsearch from outside the
    cluster.
 6. **Re-run step 1 after each Elastic upgrade** before rolling it to production.
@@ -134,7 +134,7 @@ Prerequisites).
   documents and extend mappings, and could flood ingest. Add per-key rate and body-size
   limits at the proxy if that matters.
 - **The cache is keyed by key id.** A request with a known key id and a wrong secret
-  passes the gateway and fails in Elasticsearch; the gateway never checks secrets.
+  passes the gateway and fails in Elasticsearch.
 - **Enrollment is a separate path.** A leaked enrollment token lets an outsider enroll an
   agent and get a valid tenant key. Revoke enrollment tokens after rollout windows and
   watch for unknown hosts.

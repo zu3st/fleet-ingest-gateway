@@ -1,7 +1,6 @@
 # Dependencies
 
-`fleet-authz` uses only the Go standard library; `go.mod` has no
-requirements. Elasticsearch is called over plain HTTP(S) with `net/http`.
+`fleet-authz` uses only the Go standard library. Elasticsearch is called over plain HTTP(S) with `net/http`.
 
 | Dependency | Used for | Why it is trusted |
 | --- | --- | --- |

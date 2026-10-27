@@ -31,8 +31,7 @@ GATEWAY_BIND=192.168.126.1 docker compose -f dev/compose.yaml up -d --build
    tenant outputs.
 3. Compose starts Traefik on `GATEWAY_BIND` (default `127.0.0.1`) port 8443.
    `192.168.126.1` is the VMware host-only address, so VMs can reach it. Port 8220 on the
-   same address passes TCP through to the lab's Fleet Server (lab only, not part of the
-   gateway). Elasticsearch itself is not published to the VMs.
+   same address passes TCP through to the lab's Fleet Server (lab only).
 
 The lab's Elasticsearch has no TLS, so in the dev stack Traefik forwards to it over plain
 HTTP inside the Docker network. The Kubernetes example uses HTTPS with the ECK CA.
@@ -87,8 +86,7 @@ Observed:
   the Defend + System key (63 names, including the hidden `.logs-endpoint.*` streams)
   ends in `-acme`. The key also carries `_elastic_agent_checks` with cluster `monitor`,
   which `GET /` needs.
-- **Paths:** the agent and Elastic Defend used only `GET /` and `POST /_bulk`; nothing hit
-  the 404 fallback. `HEAD /` was not observed but stays allowed per the design.
+- **Paths:** the agent and Elastic Defend used only `GET /` and `POST /_bulk`.
 - **Data:** the Defend policy response was `success` 20 seconds after enrollment, and
   System, Defend event, metadata, policy and agent monitoring data arrived in `*-acme`
   streams only. Fleet listed every component as healthy about 9 minutes later.
@@ -99,5 +97,3 @@ Observed:
   `ingest-globex.local` made the agent present its real key at the globex host. The
   authorizer denied it (`index_outside_tenant`, 403). Restoring the output resumed
   ingest.
-- **Fleet Server's own writes** (e.g. `logs-elastic_agent.status_change-default`) go from
-  Fleet Server to Elasticsearch directly and are not affected by the gateway.

@@ -26,7 +26,6 @@ log:
   level: INFO
   format: json
 
-# Headers are dropped from the access log by default, so API keys never appear there.
 accessLog:
   format: json
 

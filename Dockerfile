@@ -9,7 +9,7 @@ COPY internal ./internal
 RUN go vet ./... && go test ./... \
  && CGO_ENABLED=0 go build -trimpath -ldflags='-s -w' -o /out/fleet-authz ./cmd/fleet-authz
 
-# Static binary, system CA roots, no shell, non-root.
+# Static binary, system CA roots, non-root.
 FROM scratch
 COPY --from=build /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/
 COPY --from=build /out/fleet-authz /fleet-authz

@@ -34,7 +34,7 @@ type Decision struct {
 
 func (d Decision) allowed() bool { return d.Status == http.StatusOK }
 
-// Server answers forward-auth checks. It never sees request bodies.
+// Server answers forward-auth checks.
 type Server struct {
 	cfg     Config
 	keys    KeyStore
