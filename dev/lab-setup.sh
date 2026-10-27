@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Connects the gateway to the existing Elastic lab (elastic-mssp-dashboard/lab):
+# Connects the gateway to the existing Elastic lab of the MSSP Defend Portal:
 #   - API key for fleet-authz (read_security only) -> dev/secrets/fleet-authz-api-key
 #   - allowed namespace prefix per tenant space
 #   - one Fleet Elasticsearch output per tenant, pointing at its ingest host

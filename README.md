@@ -12,7 +12,8 @@ namespace.
 | Tenant B agent key at tenant A's host   | 403                                                              |
 | Tenant A agent key at tenant A's host   | Admitted; Elasticsearch limits it to create-only writes in `*-a` |
 
-Elasticsearch verifies the key secret and enforces the index privileges; the gateway only decides which keys may try.
+Elasticsearch verifies the key secret and enforces the index privileges; the gateway only
+decides which keys may try.
 
 ## How it works
 
@@ -42,22 +43,22 @@ agent ──TLS──▶ Traefik ── route: host + path allowlist
 
 Accepted keys are cached for 2 minutes and rejected keys for 10 seconds. A revoked key
 still fails at once, in Elasticsearch. If Elasticsearch cannot be asked, the request is
-denied with 503; so is a request beyond 32 concurrent key lookups. Each uncached decision is logged as one JSON line with decision, reason,
-key id, agent id and tenant.
+denied with 503; so is a request beyond 32 concurrent key lookups. Each uncached decision
+is logged as one JSON line with decision, reason, key id, agent id and tenant.
 
 ## Configuration
 
-| Variable          | Default   | Meaning                                                  |
-| ----------------- | --------- | -------------------------------------------------------- |
-| `ES_URL`          | required  | Elasticsearch URL                                        |
-| `ES_API_KEY_FILE` | required  | File with the authorizer's encoded API key               |
-| `ES_CA_FILE`      | –         | CA bundle for Elasticsearch TLS (default: system roots)  |
-| `LISTEN_ADDR`     | `:8080`   | Listen address                                           |
-| `MODE`            | `enforce` | `enforce`, or `log-only` (allow all, log the decision)   |
-| `TENANTS`         | required  | Comma-separated tenant names; other tenants are rejected. No name may be a prefix of another |
-| `ALLOW_TTL`       | `2m`      | Cache time for admitted keys                             |
-| `DENY_TTL`        | `10s`     | Cache time for rejected keys                             |
-| `ES_TIMEOUT`      | `5s`      | Timeout of each Elasticsearch request                    |
+| Variable          | Default   | Meaning                                                            |
+| ----------------- | --------- | ------------------------------------------------------------------ |
+| `ES_URL`          | required  | Elasticsearch URL                                                  |
+| `ES_API_KEY_FILE` | required  | File with the authorizer's encoded API key                         |
+| `ES_CA_FILE`      | –         | CA bundle for Elasticsearch TLS (default: system roots)            |
+| `LISTEN_ADDR`     | `:8080`   | Listen address                                                     |
+| `MODE`            | `enforce` | `enforce`, or `log-only` (allow all, log the decision)             |
+| `TENANTS`         | required  | Comma-separated tenant names; no name may be a prefix of another   |
+| `ALLOW_TTL`       | `2m`      | Cache time for admitted keys                                       |
+| `DENY_TTL`        | `10s`     | Cache time for rejected keys                                       |
+| `ES_TIMEOUT`      | `5s`      | Timeout of each Elasticsearch request                              |
 
 Each variable has a matching flag (`-es-url`, `-mode`, …). The authorizer's own
 credential is an API key with the `read_security` cluster privilege only:
@@ -94,8 +95,8 @@ Everything builds and runs in Docker:
 docker run --rm -u "$(id -u):$(id -g)" -e HOME=/tmp -e GOCACHE=/tmp/gocache -v "$PWD":/src -w /src golang:1.27.3-alpine go test ./...
 ```
 
-The dev stack runs Traefik and `fleet-authz` in front of the Elastic lab of
-[elastic-mssp-dashboard](../elastic-mssp-dashboard/lab) (tenants `acme` and `globex`).
+The dev stack runs Traefik and `fleet-authz` in front of the Elastic lab of the MSSP
+Defend Portal (`lab/` in that repository; tenants `acme` and `globex`).
 [docs/LAB.md](docs/LAB.md) has the steps, the end-to-end tests and the results with a
 real Elastic Defend agent on Windows.
 

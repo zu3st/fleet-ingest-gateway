@@ -1,8 +1,9 @@
 # Lab: dev stack, tests and results
 
 The dev stack runs Traefik v3 (file provider) and `fleet-authz` in front of the existing
-Elastic 9.5.5 lab of `elastic-mssp-dashboard` (Elasticsearch, Kibana, Fleet Server;
-tenants `acme` and `globex`, one Kibana space and namespace each).
+Elastic 9.5.5 lab of the MSSP Defend Portal (Elasticsearch, Kibana, Fleet Server;
+tenants `acme` and `globex`, one Kibana space and namespace each). The scripts read the
+lab's `.env` from `LAB_ENV` (default `~/elastic-mssp-dashboard/lab/.env`).
 
 ## Run it
 
