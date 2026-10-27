@@ -8,6 +8,10 @@ The design targets Traefik on RKE2 in front of ECK. The Traefik example below an
 - [ ] One data stream namespace per tenant; every agent policy of that tenant uses it.
 - [ ] Each policy's agent monitoring namespace is the tenant namespace too.
 - [ ] Space-aware Fleet with the tenant's allowed namespace prefix per space.
+- [ ] No tenant name is a prefix of another (`acme` and `acmecorp` cannot coexist). Fleet
+      checks namespaces by prefix, so `acme`'s space could create `acmecorp` policies whose
+      keys pass `acmecorp`'s gateway. `fleet-authz` refuses to start with such a
+      `TENANTS` list.
 - [ ] One Fleet Elasticsearch output per tenant, pointing at the tenant's ingest hostname,
       used for data and monitoring; agents trust its certificate.
 - [ ] One TLS certificate secret per tenant ingest hostname.
@@ -145,3 +149,7 @@ Prerequisites).
 - **Reroute-based integrations** produce cross-tenant grants and are rejected by design.
 - **When the authorizer is down,** Traefik answers 500 and agents buffer and retry. Run
   two or more replicas.
+- **A flood of made-up key ids** costs one Elasticsearch lookup each, at most 32 at a
+  time per replica; beyond that the authorizer answers 503. Agents whose keys are cached
+  are unaffected; new or expired keys retry. Add a per-source rate limit at the proxy if
+  the gateway faces the internet.

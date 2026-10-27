@@ -101,6 +101,10 @@ check "es-security-runas-user through the gateway is stripped" 200 \
 	"$(gw acme GET / -H "Authorization: $A_KEY" -H 'es-security-runas-user: elastic')"
 check "Aliased header es_security_runas_user is rejected" 400 \
 	"$(gw acme GET / -H "Authorization: $A_KEY" -H 'es_security_runas_user: elastic')"
+check "Lab Fleet Server forward over TLS" 200 \
+	"$(curl -sS -o /dev/null -w '%{http_code}' --cacert certs/ca.crt --resolve "fleet-server:8220:$BIND" https://fleet-server:8220/api/status)"
+check "Lab Fleet Server forward refuses plain HTTP" 404 \
+	"$(curl -sS -o /dev/null -w '%{http_code}' --resolve "fleet-server:8220:$BIND" http://fleet-server:8220/api/status)"
 check "Known key id, wrong secret: ES rejects" 401 "$(gw acme GET / -H "Authorization: $A_WRONG")"
 
 es DELETE /_security/api_key "{\"ids\":[\"$A_ID\"]}" >/dev/null

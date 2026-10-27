@@ -37,8 +37,10 @@ func (c *cache) put(k string, d Decision, ttl time.Duration, now time.Time) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 	if len(c.m) >= maxCacheEntries {
+		// Denials go first, so a flood of made-up key ids cannot evict the
+		// keys of working agents.
 		for key, e := range c.m {
-			if now.After(e.expires) {
+			if now.After(e.expires) || !e.d.allowed() {
 				delete(c.m, key)
 			}
 		}

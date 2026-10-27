@@ -42,7 +42,7 @@ agent ──TLS──▶ Traefik ── route: host + path allowlist
 
 Accepted keys are cached for 2 minutes and rejected keys for 10 seconds. A revoked key
 still fails at once, in Elasticsearch. If Elasticsearch cannot be asked, the request is
-denied with 503. Each uncached decision is logged as one JSON line with decision, reason,
+denied with 503; so is a request beyond 32 concurrent key lookups. Each uncached decision is logged as one JSON line with decision, reason,
 key id, agent id and tenant.
 
 ## Configuration
@@ -54,7 +54,7 @@ key id, agent id and tenant.
 | `ES_CA_FILE`      | –         | CA bundle for Elasticsearch TLS (default: system roots)  |
 | `LISTEN_ADDR`     | `:8080`   | Listen address                                           |
 | `MODE`            | `enforce` | `enforce`, or `log-only` (allow all, log the decision)   |
-| `TENANTS`         | –         | Comma-separated tenant names; other tenants are rejected |
+| `TENANTS`         | required  | Comma-separated tenant names; other tenants are rejected. No name may be a prefix of another |
 | `ALLOW_TTL`       | `2m`      | Cache time for admitted keys                             |
 | `DENY_TTL`        | `10s`     | Cache time for rejected keys                             |
 | `ES_TIMEOUT`      | `5s`      | Timeout of each Elasticsearch request                    |

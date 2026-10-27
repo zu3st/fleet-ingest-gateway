@@ -18,20 +18,23 @@ dev/lab-setup.sh
 GATEWAY_BIND=192.168.126.1 docker compose -f dev/compose.yaml up -d --build
 ```
 
-1. `gen-certs.sh` creates a local CA and a certificate for `ingest-acme.local` and
-   `ingest-globex.local` under `dev/certs/`.
+1. `gen-certs.sh` creates a local CA and certificates for `ingest-acme.local`,
+   `ingest-globex.local` and `fleet-server` under `dev/certs/`.
 2. `lab-setup.sh`:
    - creates the authorizer's API key (`read_security` only) in `dev/secrets/`;
    - sets each space's allowed namespace prefix to its tenant;
    - creates one Fleet output per tenant (`https://ingest-<tenant>.local:8443`, trusting
      the dev CA);
-   - points the tenant agent policies' data and monitoring output at it.
+   - points the tenant agent policies' data and monitoring output at it;
+   - adds the Fleet Server host `https://fleet-server:8220` (trusting the dev CA) and
+     assigns it to the tenant agent policies.
 
-   `lab-setup.sh --revert` puts the policies back on the default output and removes the
-   tenant outputs.
+   `lab-setup.sh --revert` puts the policies back on the defaults and removes the tenant
+   outputs and that Fleet Server host.
 3. Compose starts Traefik on `GATEWAY_BIND` (default `127.0.0.1`) port 8443.
    `192.168.126.1` is the VMware host-only address, so VMs can reach it. Port 8220 on the
-   same address passes TCP through to the lab's Fleet Server (lab only).
+   same address ends TLS for `fleet-server` with the dev certificate and forwards to the
+   lab's plain-HTTP Fleet Server (lab only).
 
 The lab's Elasticsearch has no TLS, so in the dev stack Traefik forwards to it over plain
 HTTP inside the Docker network. The Kubernetes example uses HTTPS with the ECK CA.
@@ -44,7 +47,7 @@ GATEWAY_BIND=192.168.126.1 dev/e2e.sh
 
 The script mints keys that look exactly like Fleet output keys, using a temporary token
 of the `elastic/fleet-server` service account as Fleet Server does, plus an admin key.
-It removes everything it created at the end. Result on 2026-10-27: 30 of 30 checks pass.
+It removes everything it created at the end. Result on 2026-10-27: 32 of 32 checks pass.
 
 | Request                                                   | Expected / observed                    |
 | --------------------------------------------------------- | -------------------------------------- |
@@ -58,6 +61,7 @@ It removes everything it created at the end. Result on 2026-10-27: 30 of 30 chec
 | Unknown host name                                         | TLS handshake refused (`sniStrict`)    |
 | `es-security-runas-user` with a tenant key                | Stripped: 200 (ES alone answers 403)   |
 | Aliased header `es_security_runas_user`                   | 400 (Traefik `aliasHeadersStrategy`)   |
+| Lab Fleet Server forward: TLS / plain HTTP                | 200 / 404                              |
 | Known key id with a wrong secret                          | Admitted by the gateway, 401 from ES   |
 | Revoked key while the gateway still caches "allow"        | 401 from ES                            |
 | Authorizer stopped                                        | 500 from Traefik, nothing forwarded    |
@@ -72,11 +76,14 @@ The Go unit tests (`go test ./...`) cover the same rules against a real 9.5.5 ou
 1. On the VM, map `fleet-server`, `ingest-acme.local` and `ingest-globex.local` to
    `192.168.126.1` in the hosts file. Port 9200 on that address is closed, so the agent
    has no direct path to Elasticsearch.
-2. Install Elastic Agent 9.5.5 into `acme-workstations` (Elastic Defend + System):
-   `elastic-agent.exe install --non-interactive --insecure --url=http://fleet-server:8220
-   --enrollment-token=<ACME_WORKSTATIONS_TOKEN>`. `--insecure` is for the lab's plain-HTTP
-   Fleet Server; the output to the gateway is verified against the dev CA from the Fleet
-   output.
+2. Copy `dev/certs/ca.crt` to the VM and install Elastic Agent 9.5.5 into
+   `acme-workstations` (Elastic Defend + System):
+   `elastic-agent.exe install --non-interactive --url=https://fleet-server:8220
+   --certificate-authorities=C:\path\to\ca.crt --enrollment-token=<ACME_WORKSTATIONS_TOKEN>`.
+
+   DC01 was enrolled earlier with `--insecure` over plain HTTP. After the switch to the
+   TLS Fleet Server host it checks in over `https://fleet-server:8220`, but keeps
+   `verification_mode: none` from that enrollment until it is enrolled again.
 
 Observed:
 

@@ -142,3 +142,12 @@ func splitReq(s string, m, u *string) {
 		}
 	}
 }
+
+func TestPrefixConflict(t *testing.T) {
+	if p, o := PrefixConflict([]string{"acme", "globex", "corp_acme"}); p != "" {
+		t.Fatalf("got conflict %q/%q", p, o)
+	}
+	if p, o := PrefixConflict([]string{"globex", "acmecorp", "acme"}); p != "acme" || o != "acmecorp" {
+		t.Fatalf("got %q/%q, want acme/acmecorp", p, o)
+	}
+}

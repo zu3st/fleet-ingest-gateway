@@ -1,12 +1,24 @@
-# Lab only, not part of the gateway: lets enrolled VMs reach the lab's Fleet Server
-# (plain HTTP) through the same host address as the ingest gateway.
+# Lab only: lets enrolled VMs reach the lab's Fleet Server through the same host
+# address as the ingest gateway. TLS ends here (dev CA); the lab's Fleet Server
+# itself speaks plain HTTP.
 tcp:
   routers:
     lab-fleet-server:
       entryPoints: [fleet]
-      rule: HostSNI(`*`)
+      rule: HostSNI(`fleet-server`)
       service: lab-fleet-server
+      # Fleet Server behind this speaks HTTP/1.1 only, so offer no h2.
+      tls: { options: lab-fleet-server }
   services:
     lab-fleet-server:
       loadBalancer:
         servers: [{ address: 'fleet-server:8220' }]
+tls:
+  options:
+    lab-fleet-server:
+      minVersion: VersionTLS12
+      sniStrict: true
+      alpnProtocols: [http/1.1]
+  certificates:
+    - certFile: /certs/fleet-server.crt
+      keyFile: /certs/fleet-server.key

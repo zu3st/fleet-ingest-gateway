@@ -35,6 +35,7 @@ const (
 	ReasonNoIndices        = "no_index_grants"
 	ReasonForeignIndex     = "index_outside_tenant"
 	ReasonLookupFailed     = "lookup_failed"
+	ReasonLookupBusy       = "lookup_busy"
 )
 
 // allowedRoutes is what Elastic Agent and Elastic Defend need on an output.
@@ -51,6 +52,20 @@ var (
 
 // ValidTenant reports whether s can be a data stream namespace.
 func ValidTenant(s string) bool { return tenantRE.MatchString(s) }
+
+// PrefixConflict returns two tenants where the first is a prefix of the
+// second. Fleet's allowed namespace prefixes would let the first create
+// namespaces of the second, and its keys would pass the second's gateway.
+func PrefixConflict(tenants []string) (prefix, other string) {
+	for _, a := range tenants {
+		for _, b := range tenants {
+			if a != b && strings.HasPrefix(b, a) {
+				return a, b
+			}
+		}
+	}
+	return "", ""
+}
 
 // RouteAllowed checks the original method and path; the query string is ignored.
 func RouteAllowed(method, uri string) bool {

@@ -46,7 +46,7 @@ func main() {
 		caFile   = flag.String("es-ca-file", env("ES_CA_FILE", ""), "CA bundle for Elasticsearch TLS (ES_CA_FILE)")
 		listen   = flag.String("listen", env("LISTEN_ADDR", ":8080"), "listen address (LISTEN_ADDR)")
 		mode     = flag.String("mode", env("MODE", "enforce"), "enforce or log-only (MODE)")
-		tenants  = flag.String("tenants", env("TENANTS", ""), "optional comma-separated tenant names (TENANTS)")
+		tenants  = flag.String("tenants", env("TENANTS", ""), "comma-separated tenant names (TENANTS)")
 		allowTTL = flag.Duration("allow-ttl", envDuration("ALLOW_TTL", 2*time.Minute), "cache time for admitted keys (ALLOW_TTL)")
 		denyTTL  = flag.Duration("deny-ttl", envDuration("DENY_TTL", 10*time.Second), "cache time for rejected keys (DENY_TTL)")
 		timeout  = flag.Duration("es-timeout", envDuration("ES_TIMEOUT", 5*time.Second), "Elasticsearch request timeout (ES_TIMEOUT)")
@@ -73,6 +73,13 @@ func main() {
 			fail("invalid tenant name", "tenant", t)
 		}
 		tenantList = append(tenantList, t)
+	}
+	if len(tenantList) == 0 {
+		fail("TENANTS is required")
+	}
+	if prefix, other := authz.PrefixConflict(tenantList); prefix != "" {
+		fail("tenant name is a prefix of another; Fleet would let it create that tenant's namespaces",
+			"tenant", prefix, "other", other)
 	}
 
 	es, err := authz.NewES(*esURL, *keyFile, *caFile, *timeout)

@@ -6,6 +6,7 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"io"
 	"log/slog"
 	"net/http"
@@ -198,5 +199,54 @@ func TestReadyz(t *testing.T) {
 	s.Handler().ServeHTTP(rec, httptest.NewRequest("GET", "/readyz", nil))
 	if rec.Code != http.StatusServiceUnavailable {
 		t.Fatalf("got %d", rec.Code)
+	}
+}
+
+// blockingES holds every lookup until release is closed.
+type blockingES struct {
+	started chan struct{}
+	release chan struct{}
+}
+
+func (b *blockingES) APIKey(context.Context, string) (*APIKey, error) {
+	b.started <- struct{}{}
+	<-b.release
+	return nil, ErrKeyNotFound
+}
+
+func (b *blockingES) Ready(context.Context) error { return nil }
+
+func TestConcurrentLookupsAreCapped(t *testing.T) {
+	b := &blockingES{started: make(chan struct{}, maxLookups), release: make(chan struct{})}
+	s := NewServer(Config{Mode: "enforce", AllowTTL: time.Minute, DenyTTL: time.Second, Tenants: []string{"acme"}},
+		b, slog.New(slog.NewJSONHandler(io.Discard, nil)))
+	done := make(chan int, maxLookups)
+	for i := range maxLookups {
+		go func() {
+			done <- call(s, "acme", map[string]string{"Authorization": apiKey(fmt.Sprintf("held%d", i))}).Code
+		}()
+	}
+	for range maxLookups {
+		<-b.started
+	}
+	if rec := call(s, "acme", map[string]string{"Authorization": apiKey("onemore")}); rec.Code != 503 {
+		t.Fatalf("lookup above the cap got %d, want 503", rec.Code)
+	}
+	close(b.release)
+	for range maxLookups {
+		if code := <-done; code != 403 {
+			t.Fatalf("held lookup got %d, want 403", code)
+		}
+	}
+}
+
+func TestCacheOverflowKeepsAllowedKeys(t *testing.T) {
+	c := newCache()
+	c.put("acme\x00agent", Decision{Status: 200}, time.Minute, now)
+	for i := range maxCacheEntries {
+		c.put(fmt.Sprintf("acme\x00made-up-%d", i), Decision{Status: 403}, time.Minute, now)
+	}
+	if _, ok := c.get("acme\x00agent", now); !ok {
+		t.Fatal("allowed key evicted by denied entries")
 	}
 }

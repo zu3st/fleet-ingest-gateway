@@ -34,6 +34,10 @@ type Decision struct {
 
 func (d Decision) allowed() bool { return d.Status == http.StatusOK }
 
+// maxLookups caps concurrent Elasticsearch lookups, so requests with made-up
+// key ids cannot load Elasticsearch without bound.
+const maxLookups = 32
+
 // Server answers forward-auth checks.
 type Server struct {
 	cfg     Config
@@ -42,11 +46,13 @@ type Server struct {
 	cache   *cache
 	metrics *metrics
 	tenants map[string]bool
+	lookups chan struct{}
 	now     func() time.Time
 }
 
 func NewServer(cfg Config, keys KeyStore, log *slog.Logger) *Server {
-	s := &Server{cfg: cfg, keys: keys, log: log, cache: newCache(), metrics: newMetrics(), now: time.Now}
+	s := &Server{cfg: cfg, keys: keys, log: log, cache: newCache(), metrics: newMetrics(),
+		lookups: make(chan struct{}, maxLookups), now: time.Now}
 	if len(cfg.Tenants) > 0 {
 		s.tenants = map[string]bool{}
 		for _, t := range cfg.Tenants {
@@ -154,6 +160,14 @@ func (s *Server) decide(r *http.Request, tenant string) (Decision, bool) {
 		return d, true
 	}
 
+	select {
+	case s.lookups <- struct{}{}:
+		defer func() { <-s.lookups }()
+	default:
+		d := deny(http.StatusServiceUnavailable, ReasonLookupBusy)
+		d.KeyID = id
+		return d, false
+	}
 	ctx, cancel := context.WithTimeout(r.Context(), 10*time.Second)
 	defer cancel()
 	start := time.Now()

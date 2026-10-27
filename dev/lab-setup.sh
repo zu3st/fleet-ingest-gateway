@@ -4,9 +4,10 @@
 #   - allowed namespace prefix per tenant space
 #   - one Fleet Elasticsearch output per tenant, pointing at its ingest host
 #   - the tenant agent policies send data and monitoring to that output
+#   - the tenant agent policies reach Fleet Server through the gateway's TLS forward
 #
 #   dev/lab-setup.sh            # set up
-#   dev/lab-setup.sh --revert   # policies back to the default output, outputs removed
+#   dev/lab-setup.sh --revert   # policies back to the defaults, outputs and Fleet Server host removed
 #
 # LAB_ENV points at the lab's .env (ELASTIC_PASSWORD).
 set -euo pipefail
@@ -21,6 +22,7 @@ ELASTIC_PASSWORD=$(sed -n 's/^ELASTIC_PASSWORD=//p' "$LAB_ENV")
 # tenant (= space = namespace) and its agent policies
 declare -A POLICIES=([acme]="acme-workstations acme-servers" [globex]="globex-endpoints")
 
+GO_IMAGE=golang:1.27.3-alpine@sha256:d200d2dd76b03a99b52651fd1325aff7dcd35422c35c01bac56571b0507f3deb
 jq() { docker run --rm -i ghcr.io/jqlang/jq:1.7.1@sha256:096b83865ad59b5b02841f103f83f45c51318394331bf1995e187ea3be937432 "$@"; }
 es() { curl -sS -u "elastic:$ELASTIC_PASSWORD" -H 'Content-Type: application/json' -X "$1" "$ES$2" ${3:+-d "$3"}; }
 kb() {
@@ -39,25 +41,27 @@ kb_ok() {
 	printf '%s' "${out%$'\n'*}"
 }
 
-set_policy_outputs() { # tenant output-id|null
-	local tenant=$1 output=$2 p policy body
+set_policy_outputs() { # tenant output-id|null fleet-server-host-id|null
+	local tenant=$1 output=$2 fleet=$3 p policy body
 	for p in ${POLICIES[$tenant]}; do
 		policy=$(kb_ok GET "/s/$tenant/api/fleet/agent_policies/$p")
-		body=$(printf '%s' "$policy" | jq -c --argjson out "$output" \
+		body=$(printf '%s' "$policy" | jq -c --argjson out "$output" --argjson fleet "$fleet" \
 			'.item | {name, namespace, description, monitoring_enabled, inactivity_timeout,
-			          data_output_id: $out, monitoring_output_id: $out}
-			       | with_entries(select(.value != null or (.key | test("output"))))')
+			          data_output_id: $out, monitoring_output_id: $out, fleet_server_host_id: $fleet}
+			       | with_entries(select(.value != null or (.key | test("output|fleet_server_host"))))')
 		kb_ok PUT "/s/$tenant/api/fleet/agent_policies/$p" "$body" >/dev/null
-		echo "policy $p -> output ${output}"
+		echo "policy $p -> output ${output}, Fleet Server host ${fleet}"
 	done
 }
 
 if [[ ${1:-} == --revert ]]; then
 	for tenant in "${!POLICIES[@]}"; do
-		set_policy_outputs "$tenant" null
+		set_policy_outputs "$tenant" null null
 		kb DELETE "/api/fleet/outputs/ingest-$tenant" >/dev/null || true
 		echo "output ingest-$tenant removed"
 	done
+	kb DELETE /api/fleet/fleet_server_hosts/gateway-fleet-server >/dev/null || true
+	echo "Fleet Server host gateway-fleet-server removed"
 	exit 0
 fi
 
@@ -70,11 +74,24 @@ key=$(es POST /_security/api_key \
 	jq -r .encoded)
 [[ $key != null && -n $key ]] || { echo "could not create the authorizer API key" >&2; exit 1; }
 mkdir -p secrets
-umask 022 # fleet-authz runs as uid 65532 and reads this bind-mounted file
-printf '%s\n' "$key" > secrets/fleet-authz-api-key
+rm -f secrets/fleet-authz-api-key
+(umask 077 && printf '%s\n' "$key" > secrets/fleet-authz-api-key)
+# fleet-authz runs as uid 65532 and reads this bind-mounted file.
+docker run --rm -v "$PWD/secrets:/s" "$GO_IMAGE" sh -c 'chown 65532:65532 /s/fleet-authz-api-key && chmod 400 /s/fleet-authz-api-key'
 echo "authorizer API key written to dev/secrets/fleet-authz-api-key"
 
 ca=$(jq -Rs . < certs/ca.crt)
+
+# Fleet Server through the gateway's TLS forward (dev/traefik/dynamic/lab-fleet-server.yaml).
+body="{\"name\":\"Fleet Server via gateway (TLS)\",\"host_urls\":[\"https://fleet-server:8220\"],
+       \"is_default\":false,\"ssl\":{\"certificate_authorities\":[$ca]}}"
+if kb GET /api/fleet/fleet_server_hosts/gateway-fleet-server | tail -1 | grep -q '^200$'; then
+	kb_ok PUT /api/fleet/fleet_server_hosts/gateway-fleet-server "$body" >/dev/null
+else
+	kb_ok POST /api/fleet/fleet_server_hosts "$(printf '%s' "$body" | jq -c '. + {id: "gateway-fleet-server"}')" >/dev/null
+fi
+echo "Fleet Server host gateway-fleet-server -> https://fleet-server:8220"
+
 for tenant in "${!POLICIES[@]}"; do
 	# 2. Tenant users can only pick namespaces of their own tenant.
 	kb_ok PUT "/s/$tenant/api/fleet/space_settings" "{\"allowed_namespace_prefixes\":[\"$tenant\"]}" >/dev/null
@@ -91,6 +108,6 @@ for tenant in "${!POLICIES[@]}"; do
 	fi
 	echo "output ingest-$tenant -> https://ingest-$tenant.local:$GATEWAY_PORT"
 
-	# 4. Data and monitoring go through the tenant's gateway.
-	set_policy_outputs "$tenant" "\"ingest-$tenant\""
+	# 4. Data and monitoring go through the tenant's gateway, Fleet traffic through TLS.
+	set_policy_outputs "$tenant" "\"ingest-$tenant\"" '"gateway-fleet-server"'
 done
