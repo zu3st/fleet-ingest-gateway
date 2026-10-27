@@ -100,6 +100,18 @@ Defend Portal (`lab/` in that repository; tenants `acme` and `globex`).
 [docs/LAB.md](docs/LAB.md) has the steps, the end-to-end tests and the results with a
 real Elastic Defend agent on Windows.
 
+## Releases
+
+Every push to `main` builds the image with
+[.github/workflows/release.yml](.github/workflows/release.yml) and publishes it as
+`ghcr.io/zu3st/fleet-ingest-gateway` (tags `latest` and `sha-<commit>`, linux/amd64). The
+build runs `go vet` and the tests; the image carries an SBOM and a build provenance
+attestation. Deploy by digest and verify it first:
+
+```bash
+gh attestation verify oci://ghcr.io/zu3st/fleet-ingest-gateway@sha256:<digest> --owner zu3st
+```
+
 ## Documentation
 
 - [Lab setup, tests and results](docs/LAB.md)

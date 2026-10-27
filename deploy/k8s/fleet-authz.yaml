@@ -1,7 +1,8 @@
 # fleet-authz on Kubernetes: one Deployment for all tenants, ClusterIP only.
 # Create the credential first (an API key with read_security only):
 #   kubectl -n elastic create secret generic fleet-authz-es --from-file=api-key=<file>
-# and set the image to your registry's fleet-authz image, pinned by digest.
+# The image comes from the release workflow; pin its digest. The GHCR package is
+# private, so add an imagePullSecret or mirror it to your registry.
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -23,7 +24,7 @@ spec:
         seccompProfile: { type: RuntimeDefault }
       containers:
         - name: fleet-authz
-          image: registry.example.com/fleet-authz:0.1.0
+          image: ghcr.io/zu3st/fleet-ingest-gateway@sha256:<digest>
           env:
             - { name: ES_URL, value: 'https://prod-es-http.elastic.svc:9200' }
             - { name: ES_API_KEY_FILE, value: /secrets/es/api-key }
