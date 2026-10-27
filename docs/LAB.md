@@ -1,8 +1,8 @@
 # Lab: dev stack, tests and results
 
 The dev stack runs Traefik v3 (file provider) and `fleet-authz` in front of the existing
-Elastic 9.5.5 lab of the MSSP Defend Portal (Elasticsearch, Kibana, Fleet Server;
-tenants `acme` and `globex`, one Kibana space and namespace each). The scripts read the
+Elastic 9.5.5 lab of the MSSP Defend Portal: Elasticsearch, Kibana, Fleet Server, and
+tenants `acme` and `globex` with one Kibana space and namespace each. The scripts read the
 lab's `.env` from `LAB_ENV` (default `~/elastic-mssp-dashboard/lab/.env`).
 
 ## Run it
@@ -22,11 +22,11 @@ GATEWAY_BIND=192.168.126.1 docker compose -f dev/compose.yaml up -d --build
 1. `gen-certs.sh` creates a local CA and certificates for `ingest-acme.local`,
    `ingest-globex.local` and `fleet-server` under `dev/certs/`.
 2. `lab-setup.sh`:
-   - creates the authorizer's API key (`read_security` only) in `dev/secrets/`;
-   - sets each space's allowed namespace prefix to its tenant;
+   - creates the authorizer's API key (`read_security` only) in `dev/secrets/`
+   - sets each space's allowed namespace prefix to its tenant
    - creates one Fleet output per tenant (`https://ingest-<tenant>.local:8443`, trusting
-     the dev CA);
-   - points the tenant agent policies' data and monitoring output at it;
+     the dev CA)
+   - points the tenant agent policies' data and monitoring output at it
    - adds the Fleet Server host `https://fleet-server:8220` (trusting the dev CA) and
      assigns it to the tenant agent policies.
 
@@ -66,7 +66,7 @@ It removes everything it created at the end. Result on 2026-10-27: 32 of 32 chec
 | Known key id with a wrong secret                          | Admitted by the gateway, 401 from ES   |
 | Revoked key while the gateway still caches "allow"        | 401 from ES                            |
 | Authorizer stopped                                        | 500 from Traefik, nothing forwarded    |
-| Log-only mode, admin key                                  | Admitted; `deny … enforced:false` logged |
+| Log-only mode, admin key                                  | Admitted, `deny … enforced:false` logged |
 | Key secrets in authorizer or Traefik logs                 | None                                   |
 
 The Go unit tests (`go test ./...`) cover the same rules against a real 9.5.5 output key
@@ -85,11 +85,11 @@ The Go unit tests (`go test ./...`) cover the same rules against a real 9.5.5 ou
    DC01 was first enrolled with `--insecure` over plain HTTP, then enrolled again with
    `elastic-agent.exe enroll --force` and the options above. Its Fleet connection now
    verifies the certificate (`verification_mode: full`, CA
-   `C:\ProgramData\fleet-gw\ca.crt`); the old agent was unenrolled and its keys revoked.
+   `C:\ProgramData\fleet-gw\ca.crt`). The old agent was unenrolled and its keys revoked.
 
    With a CA on the Fleet Server host, Fleet adds an output
    `fleetserver-output-<host id>` and issues each agent an output key for it with no
-   hosts and no privileges; the gateway would reject it (`no_index_grants`).
+   hosts and no privileges. The gateway would reject it (`no_index_grants`).
 
 Observed:
 
@@ -104,7 +104,7 @@ Observed:
   System, Defend event, metadata, policy and agent monitoring data arrived in `*-acme`
   streams only. Fleet listed every component as healthy about 9 minutes later.
 - **Alerts:** a renamed `cmd.exe` run as `C:\Users\Public\…\svchost.exe` was prevented and
-  produced three behavior alerts in `logs-endpoint.alerts-acme`; the Endpoint Security rule
+  produced three behavior alerts in `logs-endpoint.alerts-acme`, which the Endpoint Security rule
   promoted them to `.alerts-security.alerts-acme`.
 - **Cross-tenant with the real key:** pointing the `acme` output at
   `ingest-globex.local` made the agent present its real key at the globex host. The

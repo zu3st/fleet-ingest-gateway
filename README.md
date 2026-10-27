@@ -1,119 +1,129 @@
 # Fleet ingest gateway
 
-A tenant-scoped ingest gateway for Elastic Agent. Each tenant's agents reach
-Elasticsearch only through that tenant's hostname, and the gateway admits nothing but
-Fleet-issued output API keys whose index grants all belong to that tenant's data stream
-namespace.
+Elastic Agents of tenant `acme` send their data to `ingest-acme.local` instead of to
+Elasticsearch. Traefik forwards a request only if `fleet-authz` confirms that its API key
+is a Fleet output key whose index grants all belong to `acme`.
 
-| Leaked credential                       | Through the gateway                                              |
-| --------------------------------------- | ---------------------------------------------------------------- |
-| `elastic` or any Basic-auth user        | 401                                                              |
-| Admin-created or other non-Fleet key    | 403                                                              |
-| Tenant B agent key at tenant A's host   | 403                                                              |
-| Tenant A agent key at tenant A's host   | Admitted; Elasticsearch limits it to create-only writes in `*-a` |
+## Request flow
 
-Elasticsearch verifies the key secret and enforces the index privileges; the gateway only
-decides which keys may try.
-
-## How it works
-
-Traefik routes each tenant's ingest hostname to Elasticsearch. The route itself is the
-path allowlist (`POST /_bulk`, `GET /`, `HEAD /`; anything else is a 404), a `headers`
-middleware removes `es-security-runas-user`, and a per-tenant `ForwardAuth` middleware
-asks `fleet-authz` whether the request's API key belongs to that tenant:
-
-```
-agent ──TLS──▶ Traefik ── route: host + path allowlist
-                  │        strip es-security-runas-user
-                  │        ForwardAuth ──▶ fleet-authz /check?tenant=acme ──▶ GET _security/api_key?id=…
-                  ▼
-             Elasticsearch (verifies the secret, enforces privileges)
+```mermaid
+sequenceDiagram
+    participant A as Agent (acme)
+    participant T as Traefik<br/>ingest-acme.local
+    participant Z as fleet-authz
+    participant E as Elasticsearch
+    A->>T: POST /_bulk<br/>Authorization: ApiKey base64(id:secret)
+    Note over T: 404 unless POST /_bulk, GET / or HEAD /<br/>removes es-security-runas-user
+    T->>Z: GET /check?tenant=acme (request headers, no body)
+    Z->>E: GET /_security/api_key?id={key id}
+    E-->>Z: key document
+    Z-->>T: 200, or 401 / 403 / 503
+    T->>E: on 200: the original request
+    Note over E: checks the secret and the key's index privileges
+    E-->>A: response (through Traefik)
 ```
 
-`fleet-authz` is a stateless Go service (standard library only, static binary in a
-`scratch` image). It admits a key only if all of these hold:
+Traefik sets the tenant: each tenant hostname has its own middleware with a fixed
+`?tenant=<name>`. The request cannot choose it.
 
-- the request is `GET /`, `HEAD /` or `POST /_bulk`, with exactly one
-  `Authorization: ApiKey …` header, no cookie and no `es-security-runas-user`;
-- the key is a `rest` key owned by `elastic/fleet-server` in realm `_service_account`,
-  with metadata `managed_by: fleet-server`, `managed: true`, `type: output` and an
-  `agent_id`, and is neither invalidated nor expired;
-- every index name in its role descriptors ends in `-<tenant>`; a key without index
-  grants, or with a grant such as `logs-*-*` (reroute), is rejected.
+## How a key is matched to the tenant
 
-Accepted keys are cached for 2 minutes and rejected keys for 10 seconds. A revoked key
-still fails at once, in Elasticsearch. If Elasticsearch cannot be asked, the request is
-denied with 503; so is a request beyond 32 concurrent key lookups. Each uncached decision
-is logged as one JSON line with decision, reason, key id, agent id and tenant.
+`fleet-authz` looks up the key id from the `Authorization` header (the part before `:`).
+Elasticsearch checks the secret later. A real Defend + System key on 9.5.5, shortened:
+
+```json
+{
+  "id": "TESTkeyid000000000001",
+  "type": "rest",
+  "username": "elastic/fleet-server",
+  "realm": "_service_account",
+  "invalidated": false,
+  "expiration": null,
+  "metadata": {
+    "managed_by": "fleet-server", "managed": true, "type": "output",
+    "agent_id": "00000000-0000-4000-8000-000000000001"
+  },
+  "role_descriptors": {
+    "policy-16": { "indices": [{ "names": ["logs-endpoint.alerts-acme"], "privileges": ["auto_configure", "create_doc"] }, "…"] },
+    "policy-18": { "indices": [{ "names": ["logs-system.auth-acme"], "privileges": ["auto_configure", "create_doc"] }, "…"] }
+  }
+}
+```
+
+The key is admitted for `acme` if every check passes:
+
+| Field                                        | Must be                                    | Rejects                                          |
+| -------------------------------------------- | ------------------------------------------ | ------------------------------------------------ |
+| `type`                                       | `rest`                                     | cross-cluster keys                               |
+| `username`, `realm`                          | `elastic/fleet-server`, `_service_account` | keys created by users or other services          |
+| `metadata.managed_by`, `.managed`, `.type`   | `fleet-server`, `true`, `output`           | Fleet Server's other keys, such as access keys   |
+| `metadata.agent_id`                          | present                                    |                                                  |
+| `invalidated`, `expiration`                  | `false`, not in the past                   | revoked or expired keys                          |
+| every `role_descriptors.*.indices[].names[]` | ends in `-acme`, at least one name         | other tenants' keys, reroute grants (`logs-*-*`) |
+
+Fleet builds every index name of an output key from the agent policy's namespace
+(`<type>-<dataset>-<namespace>`, plus Defend's hidden `.logs-endpoint.*` streams). A key
+whose names all end in `-acme` comes from an `acme` policy, and Elasticsearch lets it
+write only there. This holds as long as only `acme`'s Kibana space can create namespace
+`acme` (see the [prerequisites](docs/PRODUCTION.md#prerequisites)).
+
+`fleet-authz` answers 200 if all checks pass, 401 without exactly one `ApiKey` header (or
+with a cookie), 403 for an unknown key or failed check, and 503 if Elasticsearch did not
+answer or 32 lookups are running. `log-only` mode always answers 200. Admitted keys are
+cached for 2 minutes, rejected ones for 10 seconds, and each new decision is logged as one
+JSON line.
 
 ## Configuration
 
-| Variable          | Default   | Meaning                                                            |
-| ----------------- | --------- | ------------------------------------------------------------------ |
-| `ES_URL`          | required  | Elasticsearch URL                                                  |
-| `ES_API_KEY_FILE` | required  | File with the authorizer's encoded API key                         |
-| `ES_CA_FILE`      | –         | CA bundle for Elasticsearch TLS (default: system roots)            |
-| `LISTEN_ADDR`     | `:8080`   | Listen address                                                     |
-| `MODE`            | `enforce` | `enforce`, or `log-only` (allow all, log the decision)             |
-| `TENANTS`         | required  | Comma-separated tenant names; no name may be a prefix of another   |
-| `ALLOW_TTL`       | `2m`      | Cache time for admitted keys                                       |
-| `DENY_TTL`        | `10s`     | Cache time for rejected keys                                       |
-| `ES_TIMEOUT`      | `5s`      | Timeout of each Elasticsearch request                              |
+| Variable          | Default   | Meaning                                                           |
+| ----------------- | --------- | ----------------------------------------------------------------- |
+| `ES_URL`          | required  | Elasticsearch URL                                                 |
+| `ES_API_KEY_FILE` | required  | File with the authorizer's encoded API key (`read_security` only) |
+| `ES_CA_FILE`      | –         | CA bundle for Elasticsearch TLS (default: system roots)           |
+| `TENANTS`         | required  | Comma-separated tenant names, none a prefix of another            |
+| `MODE`            | `enforce` | `enforce` or `log-only`                                           |
+| `LISTEN_ADDR`     | `:8080`   | Listen address                                                    |
+| `ALLOW_TTL`       | `2m`      | Cache time for admitted keys                                      |
+| `DENY_TTL`        | `10s`     | Cache time for rejected keys                                      |
+| `ES_TIMEOUT`      | `5s`      | Timeout of each Elasticsearch request                             |
 
-Each variable has a matching flag (`-es-url`, `-mode`, …). The authorizer's own
-credential is an API key with the `read_security` cluster privilege only:
+Each variable has a matching flag (`-es-url`, `-mode`, …). The authorizer's key:
 
 ```json
 POST /_security/api_key
 { "name": "fleet-authz", "role_descriptors": { "fleet_authz": { "cluster": ["read_security"] } } }
 ```
 
-Endpoints: `GET /check?tenant=<namespace>` (forward auth), `/healthz`, `/readyz`
-(Elasticsearch reachable and the credential holds `read_security`) and `/metrics`
-(Prometheus). The contract is plain HTTP forward auth, so NGINX `auth_request` or Envoy
-`ext_authz` (HTTP mode) can use it too.
+Endpoints: `GET /check?tenant=<name>`, `/healthz`, `/readyz` (Elasticsearch reachable,
+credential holds `read_security`) and `/metrics` (Prometheus).
 
 ## Traefik configuration
 
-Plain Traefik configuration, written by hand:
+- **Docker:** [dev/traefik/dynamic/gateway.yaml](dev/traefik/dynamic/gateway.yaml)
+- **Kubernetes / RKE2:** example with placeholders in
+  [docs/PRODUCTION.md](docs/PRODUCTION.md#traefik-configuration-kubernetes), and
+  [deploy/k8s/fleet-authz.yaml](deploy/k8s/fleet-authz.yaml) for the authorizer
 
-- **Docker (file provider):** `dev/traefik/dynamic/gateway.yaml`
-- **Kubernetes / RKE2 (CRDs):** an example with placeholders in
-  [docs/PRODUCTION.md](docs/PRODUCTION.md#traefik-configuration-kubernetes)
-
-Onboarding a tenant means copying one tenant's route and `fleet-authz-<tenant>`
-middleware and changing the name, hostname and certificate.
-`deploy/k8s/fleet-authz.yaml` runs the authorizer (2 replicas, ClusterIP, NetworkPolicy
-allowing only Traefik). The Traefik settings the gateway relies on are listed in
-[docs/PRODUCTION.md](docs/PRODUCTION.md#prerequisites).
-
-## Development
-
-Everything builds and runs in Docker:
-
-```bash
-docker run --rm -u "$(id -u):$(id -g)" -e HOME=/tmp -e GOCACHE=/tmp/gocache -v "$PWD":/src -w /src golang:1.27.3-alpine go test ./...
-```
-
-The dev stack runs Traefik and `fleet-authz` in front of the Elastic lab of the MSSP
-Defend Portal (`lab/` in that repository; tenants `acme` and `globex`).
-[docs/LAB.md](docs/LAB.md) has the steps, the end-to-end tests and the results with a
-real Elastic Defend agent on Windows.
+To add a tenant, copy one tenant's router and `fleet-authz-<tenant>` middleware and change
+the name, hostname and certificate.
 
 ## Releases
 
-Every push to `main` builds the image with
-[.github/workflows/release.yml](.github/workflows/release.yml) and publishes it as
-`ghcr.io/zu3st/fleet-ingest-gateway` (tags `latest` and `sha-<commit>`, linux/amd64). The
-build runs `go vet` and the tests; the image carries an SBOM and a build provenance
-attestation. Deploy by digest and verify it first:
+Every push to `main` runs [release.yml](.github/workflows/release.yml): it builds the
+image (including `go vet` and the tests) and publishes `ghcr.io/zu3st/fleet-ingest-gateway`
+as `latest` and `sha-<commit>`, with an SBOM and a provenance attestation. Deploy by
+digest after checking it:
 
 ```bash
 gh attestation verify oci://ghcr.io/zu3st/fleet-ingest-gateway@sha256:<digest> --owner zu3st
 ```
 
-## Documentation
+## Development
 
-- [Lab setup, tests and results](docs/LAB.md)
-- [Production notes: prerequisites, rollout, limits](docs/PRODUCTION.md)
-- [Dependencies and why they are trusted](docs/DEPENDENCIES.md)
+```bash
+docker run --rm -u "$(id -u):$(id -g)" -e HOME=/tmp -e GOCACHE=/tmp/gocache -v "$PWD":/src -w /src golang:1.27.3-alpine go test ./...
+```
+
+- [docs/LAB.md](docs/LAB.md): dev stack, end-to-end tests, real Defend agent results
+- [docs/PRODUCTION.md](docs/PRODUCTION.md): prerequisites, rollout, known limits
+- [docs/DEPENDENCIES.md](docs/DEPENDENCIES.md): dependencies and why they are trusted

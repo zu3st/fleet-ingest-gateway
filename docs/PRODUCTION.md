@@ -5,7 +5,7 @@ The design targets Traefik on RKE2 in front of ECK. The Traefik example below an
 
 ## Prerequisites
 
-- [ ] One data stream namespace per tenant; every agent policy of that tenant uses it.
+- [ ] One data stream namespace per tenant, used by every agent policy of that tenant.
 - [ ] Each policy's agent monitoring namespace is the tenant namespace too.
 - [ ] Space-aware Fleet with the tenant's allowed namespace prefix per space.
 - [ ] No tenant name is a prefix of another (`acme` and `acmecorp` cannot coexist). Fleet
@@ -13,20 +13,20 @@ The design targets Traefik on RKE2 in front of ECK. The Traefik example below an
       keys pass `acmecorp`'s gateway. `fleet-authz` refuses to start with such a
       `TENANTS` list.
 - [ ] One Fleet Elasticsearch output per tenant, pointing at the tenant's ingest hostname,
-      used for data and monitoring; agents trust its certificate.
+      used for data and monitoring. Agents trust its certificate.
 - [ ] One TLS certificate secret per tenant ingest hostname.
-- [ ] Kibana at or above the fix for CVE-2026-72631 (9.5.1); confirm the fix version for
+- [ ] Kibana at or above the fix for CVE-2026-72631 (9.5.1). Confirm the fix version for
       CVE-2026-72632 and that 9.5.5 includes it.
 - [ ] Authorizer API key with `read_security` only.
-- [ ] Tenant `IngressRoute`s and middlewares live in the Elasticsearch namespace;
-      `allowCrossNamespace` stays off.
+- [ ] Tenant `IngressRoute`s and middlewares live in the Elasticsearch namespace, with
+      `allowCrossNamespace` off.
 - [ ] Traefik's `websecure` entrypoint has `http.aliasHeadersStrategy: reject`
       (Traefik 3.7 otherwise forwards `es_security_runas_user`-style aliases of headers
       it manages) and `forwardedHeaders.trustedIPs` limited to the load balancer, if any.
       How these are set depends on how Traefik is deployed.
 - [ ] ECK's Elasticsearch HTTP service stays ClusterIP. NetworkPolicy: only Traefik and
-      internal consumers (Kibana, Fleet Server) reach port 9200; only Traefik reaches the
-      authorizer (`deploy/k8s/fleet-authz.yaml` has the authorizer side).
+      internal consumers (Kibana, Fleet Server) reach port 9200, and only Traefik reaches
+      the authorizer (`deploy/k8s/fleet-authz.yaml` has the authorizer side).
 - [ ] No standalone agents or other non-Fleet writers on the tenant ingest hostnames.
 
 ## Traefik configuration (Kubernetes)
@@ -108,8 +108,8 @@ spec:
       name: ingest
 ```
 
-The `match` rule is the path allowlist; Traefik answers 404 to anything else. On
-Traefik itself, set `--entryPoints.websecure.http.aliasHeadersStrategy=reject` (see
+Traefik answers 404 to any method and path the `match` rule does not list. In Traefik's
+static configuration, set `--entryPoints.websecure.http.aliasHeadersStrategy=reject` (see
 Prerequisites).
 
 ## Rollout
@@ -121,12 +121,12 @@ Prerequisites).
 2. **Deploy one tenant in log-only mode** (`MODE=log-only`) for about a week. The
    authorizer allows everything and logs the decision it would have made.
 3. **Review the logs.** Paths outside the allowlist show up as 404s in Traefik's access
-   log; add legitimate ones to the route rule and to `allowedRoutes` in
+   log. Add legitimate ones to the route rule and to `allowedRoutes` in
    `internal/authz/rules.go`. Fix policies whose keys would be rejected (wrong namespace,
    reroute grants).
 4. **Enforce for that tenant.** Alert on denials of keys owned by `elastic/fleet-server`
    (reasons `not_fleet_managed`, `not_output_key`, `no_agent_id`, `no_index_grants`,
-   `index_outside_tenant` in `fleet_authz_decisions_total`); they usually mean a schema
+   `index_outside_tenant` in `fleet_authz_decisions_total`). They usually mean a schema
    change or policy drift.
 5. **Repeat per tenant**, then remove any direct route to Elasticsearch from outside the
    cluster.
@@ -145,11 +145,11 @@ Prerequisites).
 - **Kibana and Fleet Server are not covered.** A leaked superuser password still works
   against Kibana if it is reachable from outside.
 - **Undocumented schema.** The key fields come from Fleet Server's implementation, not a
-  documented contract; an upgrade can change them (Rollout step 6).
+  documented contract. An upgrade can change them (Rollout step 6).
 - **Reroute-based integrations** produce cross-tenant grants and are rejected by design.
 - **When the authorizer is down,** Traefik answers 500 and agents buffer and retry. Run
   two or more replicas.
 - **A flood of made-up key ids** costs one Elasticsearch lookup each, at most 32 at a
-  time per replica; beyond that the authorizer answers 503. Agents whose keys are cached
-  are unaffected; new or expired keys retry. Add a per-source rate limit at the proxy if
+  time per replica. Beyond that the authorizer answers 503. Agents whose keys are cached
+  are unaffected, and new or expired keys retry. Add a per-source rate limit at the proxy if
   the gateway faces the internet.
