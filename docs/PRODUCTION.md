@@ -115,7 +115,6 @@ spec:
 
 ## Known limits
 
-- A leaked enrollment token lets an outsider enroll an agent and get a valid tenant key.
 - The key fields come from Fleet Server's implementation, not a documented contract.
 - Reroute-based integrations produce cross-tenant grants and are rejected.
 - Made-up key ids cost one Elasticsearch lookup each, at most 32 at a time per replica.
