@@ -92,7 +92,10 @@ JSON line.
 | `DENY_TTL`        | `10s`     | Cache time for rejected keys                                      |
 | `ES_TIMEOUT`      | `5s`      | Timeout of each Elasticsearch request                             |
 
-Each variable has a matching flag (`-es-url`, `-mode`, …). The authorizer's key:
+Each variable has a matching flag (`-es-url`, `-mode`, …).
+
+To create the API key for `ES_API_KEY_FILE`, send this request, for example from Kibana Dev
+Tools, then write the `encoded` value of the response to the file:
 
 ```json
 POST /_security/api_key
