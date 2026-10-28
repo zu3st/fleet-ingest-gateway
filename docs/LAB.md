@@ -110,8 +110,9 @@ Observed:
   66 index grants, all ending in `-acme` (among them `logs-osquery_manager.result-acme` and
   `logs-osquery_manager.action.responses-acme`). A live query (`select … from os_version`)
   completed, and its result and action response arrived in those two streams through the
-  gateway. Fleet Server also writes a copy of the response to
-  `.logs-osquery_manager.action.responses-default` itself.
+  gateway. The agent also acknowledges the action to Fleet Server, and a transform managed by
+  Kibana's Osquery plugin copies that acknowledgment from `.fleet-actions-results` into
+  `.logs-osquery_manager.action.responses-default` (status and row count for all spaces).
 - **Cross-tenant with the agent's key:** pointing the `acme` output at
   `ingest-globex.local` made the agent present its key at the globex host. The
   authorizer denied it (`index_outside_tenant`, 403). Restoring the output resumed
