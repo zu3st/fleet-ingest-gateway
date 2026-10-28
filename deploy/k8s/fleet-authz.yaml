@@ -10,47 +10,75 @@ metadata:
 spec:
   replicas: 2
   selector:
-    matchLabels: { app: fleet-authz }
+    matchLabels:
+      app: fleet-authz
   template:
     metadata:
-      labels: { app: fleet-authz }
+      labels:
+        app: fleet-authz
     spec:
       automountServiceAccountToken: false
       securityContext:
         runAsNonRoot: true
         runAsUser: 65532
         runAsGroup: 65532
-        seccompProfile: { type: RuntimeDefault }
+        seccompProfile:
+          type: RuntimeDefault
       containers:
         - name: fleet-authz
           image: ghcr.io/zu3st/fleet-ingest-gateway@sha256:<digest>
           env:
-            - { name: ES_URL, value: 'https://prod-es-http.elastic.svc:9200' }
-            - { name: ES_API_KEY_FILE, value: /secrets/es/api-key }
-            - { name: ES_CA_FILE, value: /secrets/ca/ca.crt }
-            - { name: MODE, value: log-only } # switch to enforce after the log-only review
-            - { name: TENANTS, value: 'tenanta,tenantb' }
-          ports: [{ name: http, containerPort: 8080 }]
+            - name: ES_URL
+              value: https://prod-es-http.elastic.svc:9200
+            - name: ES_API_KEY_FILE
+              value: /secrets/es/api-key
+            - name: ES_CA_FILE
+              value: /secrets/ca/ca.crt
+            - name: MODE
+              value: log-only # switch to enforce after the log-only review
+            - name: TENANTS
+              value: tenanta,tenantb
+          ports:
+            - name: http
+              containerPort: 8080
           livenessProbe:
-            httpGet: { path: /healthz, port: http }
+            httpGet:
+              path: /healthz
+              port: http
           readinessProbe:
-            httpGet: { path: /readyz, port: http }
+            httpGet:
+              path: /readyz
+              port: http
             periodSeconds: 10
           resources:
-            requests: { cpu: 50m, memory: 32Mi }
-            limits: { memory: 128Mi }
+            requests:
+              cpu: 50m
+              memory: 32Mi
+            limits:
+              memory: 128Mi
           securityContext:
             allowPrivilegeEscalation: false
             readOnlyRootFilesystem: true
-            capabilities: { drop: [ALL] }
+            capabilities:
+              drop:
+                - ALL
           volumeMounts:
-            - { name: es-key, mountPath: /secrets/es, readOnly: true }
-            - { name: es-ca, mountPath: /secrets/ca, readOnly: true }
+            - name: es-key
+              mountPath: /secrets/es
+              readOnly: true
+            - name: es-ca
+              mountPath: /secrets/ca
+              readOnly: true
       volumes:
         - name: es-key
-          secret: { secretName: fleet-authz-es }
+          secret:
+            secretName: fleet-authz-es
         - name: es-ca
-          secret: { secretName: prod-es-http-certs-public, items: [{ key: ca.crt, path: ca.crt }] }
+          secret:
+            secretName: prod-es-http-certs-public
+            items:
+              - key: ca.crt
+                path: ca.crt
 ---
 apiVersion: v1
 kind: Service
@@ -59,8 +87,12 @@ metadata:
   namespace: elastic
 spec:
   type: ClusterIP
-  selector: { app: fleet-authz }
-  ports: [{ name: http, port: 8080, targetPort: http }]
+  selector:
+    app: fleet-authz
+  ports:
+    - name: http
+      port: 8080
+      targetPort: http
 ---
 # Only Traefik (rke2-traefik in kube-system) may call the authorizer.
 apiVersion: networking.k8s.io/v1
@@ -70,12 +102,17 @@ metadata:
   namespace: elastic
 spec:
   podSelector:
-    matchLabels: { app: fleet-authz }
-  policyTypes: [Ingress]
+    matchLabels:
+      app: fleet-authz
+  policyTypes:
+    - Ingress
   ingress:
     - from:
         - namespaceSelector:
-            matchLabels: { kubernetes.io/metadata.name: kube-system }
+            matchLabels:
+              kubernetes.io/metadata.name: kube-system
           podSelector:
-            matchLabels: { app.kubernetes.io/name: rke2-traefik }
-      ports: [{ port: 8080 }]
+            matchLabels:
+              app.kubernetes.io/name: rke2-traefik
+      ports:
+        - port: 8080

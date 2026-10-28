@@ -10,8 +10,10 @@ name: fleet-ingest-gateway
 
 x-hardening: &hardening
   read_only: true
-  cap_drop: [ALL]
-  security_opt: [no-new-privileges:true]
+  cap_drop:
+    - ALL
+  security_opt:
+    - no-new-privileges:true
   restart: unless-stopped
 
 services:
@@ -26,12 +28,19 @@ services:
     ports:
       - '${GATEWAY_BIND:-127.0.0.1}:8443:8443'
       - '${GATEWAY_BIND:-127.0.0.1}:8220:8220' # lab only: Fleet Server for VMs
-    networks: [gateway, elastic]
+    networks:
+      - gateway
+      - elastic
     healthcheck:
-      test: ['CMD', 'traefik', 'healthcheck', '--ping']
+      test:
+        - CMD
+        - traefik
+        - healthcheck
+        - --ping
       interval: 10s
     depends_on:
-      fleet-authz: { condition: service_healthy }
+      fleet-authz:
+        condition: service_healthy
 
   fleet-authz:
     <<: *hardening
@@ -45,7 +54,9 @@ services:
     secrets:
       - source: authz_api_key
         target: es_api_key
-    networks: [gateway, elastic]
+    networks:
+      - gateway
+      - elastic
 
 networks:
   gateway:

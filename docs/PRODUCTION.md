@@ -90,7 +90,8 @@ metadata:
   name: ingest-<tenant>
   namespace: <es-namespace>
 spec:
-  entryPoints: [websecure]
+  entryPoints:
+    - websecure
   routes:
     - kind: Rule
       match: 'Host(`<ingest-host>`) && ((Path(`/_bulk`) && Method(`POST`)) || (Path(`/`) && (Method(`GET`) || Method(`HEAD`))))'

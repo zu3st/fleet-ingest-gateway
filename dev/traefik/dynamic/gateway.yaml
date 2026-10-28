@@ -3,15 +3,21 @@
 http:
   routers:
     ingest-acme:
-      entryPoints: [websecure]
+      entryPoints:
+        - websecure
       rule: 'Host(`ingest-acme.local`) && ((Path(`/_bulk`) && Method(`POST`)) || (Path(`/`) && (Method(`GET`) || Method(`HEAD`))))'
-      middlewares: [strip-runas, fleet-authz-acme]
+      middlewares:
+        - strip-runas
+        - fleet-authz-acme
       service: elasticsearch
       tls: {}
     ingest-globex:
-      entryPoints: [websecure]
+      entryPoints:
+        - websecure
       rule: 'Host(`ingest-globex.local`) && ((Path(`/_bulk`) && Method(`POST`)) || (Path(`/`) && (Method(`GET`) || Method(`HEAD`))))'
-      middlewares: [strip-runas, fleet-authz-globex]
+      middlewares:
+        - strip-runas
+        - fleet-authz-globex
       service: elasticsearch
       tls: {}
   middlewares:
@@ -32,7 +38,8 @@ http:
   services:
     elasticsearch:
       loadBalancer:
-        servers: [{ url: "http://elasticsearch:9200" }]
+        servers:
+          - url: http://elasticsearch:9200
 tls:
   options:
     default:

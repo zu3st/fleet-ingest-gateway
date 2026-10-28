@@ -4,21 +4,25 @@
 tcp:
   routers:
     lab-fleet-server:
-      entryPoints: [fleet]
+      entryPoints:
+        - fleet
       rule: HostSNI(`fleet-server`)
       service: lab-fleet-server
       # Fleet Server behind this speaks HTTP/1.1 only, so offer no h2.
-      tls: { options: lab-fleet-server }
+      tls:
+        options: lab-fleet-server
   services:
     lab-fleet-server:
       loadBalancer:
-        servers: [{ address: 'fleet-server:8220' }]
+        servers:
+          - address: fleet-server:8220
 tls:
   options:
     lab-fleet-server:
       minVersion: VersionTLS12
       sniStrict: true
-      alpnProtocols: [http/1.1]
+      alpnProtocols:
+        - http/1.1
   certificates:
     - certFile: /certs/fleet-server.crt
       keyFile: /certs/fleet-server.key
