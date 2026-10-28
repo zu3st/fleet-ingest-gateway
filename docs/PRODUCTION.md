@@ -115,7 +115,6 @@ spec:
 
 ## Known limits
 
-- A stolen tenant key works within that tenant's data streams.
 - The gateway checks the key id. A wrong secret for a known id fails in Elasticsearch.
 - A leaked enrollment token lets an outsider enroll an agent and get a valid tenant key.
 - Kibana and Fleet Server are outside the gateway.
