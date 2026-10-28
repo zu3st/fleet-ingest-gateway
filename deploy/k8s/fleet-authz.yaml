@@ -1,12 +1,11 @@
-# fleet-authz on Kubernetes: one Deployment for all tenants, ClusterIP only.
-# Create the credential first (an API key with read_security only):
-#   kubectl -n elastic create secret generic fleet-authz-es --from-file=api-key=<file>
+# fleet-authz on Kubernetes: one Deployment for all tenants. Create the credential
+# first (an API key with read_security only):
+#   kubectl create secret generic fleet-authz-es --from-file=api-key=<file>
 # The image comes from the release workflow (public on GHCR). Pin its digest.
 apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: fleet-authz
-  namespace: elastic
 spec:
   replicas: 2
   selector:
@@ -29,7 +28,7 @@ spec:
           image: ghcr.io/zu3st/fleet-ingest-gateway@sha256:<digest>
           env:
             - name: ES_URL
-              value: https://prod-es-http.elastic.svc:9200
+              value: https://<es-service>.<es-namespace>.svc:9200
             - name: ES_API_KEY_FILE
               value: /secrets/es/api-key
             - name: ES_CA_FILE
@@ -75,7 +74,7 @@ spec:
             secretName: fleet-authz-es
         - name: es-ca
           secret:
-            secretName: prod-es-http-certs-public
+            secretName: <es-ca-secret>
             items:
               - key: ca.crt
                 path: ca.crt
@@ -84,35 +83,10 @@ apiVersion: v1
 kind: Service
 metadata:
   name: fleet-authz
-  namespace: elastic
 spec:
-  type: ClusterIP
   selector:
     app: fleet-authz
   ports:
     - name: http
       port: 8080
       targetPort: http
----
-# Only Traefik (rke2-traefik in kube-system) may call the authorizer.
-apiVersion: networking.k8s.io/v1
-kind: NetworkPolicy
-metadata:
-  name: fleet-authz
-  namespace: elastic
-spec:
-  podSelector:
-    matchLabels:
-      app: fleet-authz
-  policyTypes:
-    - Ingress
-  ingress:
-    - from:
-        - namespaceSelector:
-            matchLabels:
-              kubernetes.io/metadata.name: kube-system
-          podSelector:
-            matchLabels:
-              app.kubernetes.io/name: rke2-traefik
-      ports:
-        - port: 8080
