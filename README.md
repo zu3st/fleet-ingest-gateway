@@ -29,7 +29,8 @@ Traefik sets the tenant: each tenant hostname has its own middleware with a fixe
 ## How a key is matched to the tenant
 
 `fleet-authz` looks up the key id from the `Authorization` header (the part before `:`).
-Elasticsearch checks the secret later. The key of an agent with Elastic Defend and System, on 9.5.5:
+Elasticsearch checks the secret later. The key of an agent with Elastic Defend and
+System, on 9.5.5:
 
 ```json
 {
@@ -115,8 +116,8 @@ the name, hostname and certificate.
 
 Every push to `main` runs [release.yml](.github/workflows/release.yml): it builds the
 image (including `go vet` and the tests) and publishes `ghcr.io/zu3st/fleet-ingest-gateway`
-as `latest` and `sha-<commit>`, with an SBOM and a provenance attestation. Deploy by
-digest after checking it:
+as `latest` and `sha-<commit>`, with an SBOM and a provenance attestation. To check an
+image:
 
 ```bash
 gh attestation verify oci://ghcr.io/zu3st/fleet-ingest-gateway@sha256:<digest> --owner zu3st
