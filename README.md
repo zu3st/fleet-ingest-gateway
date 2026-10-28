@@ -102,8 +102,14 @@ POST /_security/api_key
 { "name": "fleet-authz", "role_descriptors": { "fleet_authz": { "cluster": ["read_security"] } } }
 ```
 
-Endpoints: `GET /check?tenant=<name>`, `/healthz`, `/readyz` (Elasticsearch reachable,
-credential holds `read_security`) and `/metrics` (Prometheus).
+`fleet-authz` serves these endpoints:
+
+| Endpoint                   | Answers                                                                                   |
+| -------------------------- | ----------------------------------------------------------------------------------------- |
+| `GET /check?tenant=<name>` | The forward-auth decision for Traefik                                                     |
+| `GET /healthz`             | 200 while the process runs (liveness probe)                                               |
+| `GET /readyz`              | 200 if Elasticsearch answers and the authorizer's key has `read_security`, otherwise 503 (readiness probe) |
+| `GET /metrics`             | Prometheus metrics: decisions per tenant and reason, Elasticsearch lookups and their latency |
 
 ## Traefik configuration
 
