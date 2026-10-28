@@ -104,8 +104,14 @@ Observed:
   System, Defend event, metadata, policy and agent monitoring data arrived in `*-acme`
   streams only. Fleet listed every component as healthy about 9 minutes later.
 - **Alerts:** a renamed `cmd.exe` run as `C:\Users\Public\…\svchost.exe` was prevented and
-  produced three behavior alerts in `logs-endpoint.alerts-acme`, which the Endpoint Security rule
-  promoted them to `.alerts-security.alerts-acme`.
+  produced three behavior alerts in `logs-endpoint.alerts-acme`, which the Endpoint Security
+  rule promoted to `.alerts-security.alerts-acme`.
+- **Osquery Manager 1.35.1:** after adding it to `acme-workstations`, the agent's new key had
+  66 index grants, all ending in `-acme` (among them `logs-osquery_manager.result-acme` and
+  `logs-osquery_manager.action.responses-acme`). A live query (`select … from os_version`)
+  completed, and its result and action response arrived in those two streams through the
+  gateway. Fleet Server also writes a copy of the response to
+  `.logs-osquery_manager.action.responses-default` itself.
 - **Cross-tenant with the agent's key:** pointing the `acme` output at
   `ingest-globex.local` made the agent present its key at the globex host. The
   authorizer denied it (`index_outside_tenant`, 403). Restoring the output resumed
