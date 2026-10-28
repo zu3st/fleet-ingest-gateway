@@ -57,7 +57,7 @@ It removes everything it created at the end. Result on 2026-10-27: 32 of 32 chec
 | Tenant A key at B host, tenant B key at A host            | 403                                    |
 | `elastic` Basic auth, no credentials, Bearer token        | 401                                    |
 | Admin-created API key                                     | 403                                    |
-| Key with a reroute grant (`logs-*-*`)                     | 403                                    |
+| Key with a namespace wildcard (`logs-*-*`)                | 403                                    |
 | `/_cat/indices`, `/_search`, `/<index>/_bulk`, `GET /_bulk`, `DELETE /` | 404                      |
 | Unknown host name                                         | TLS handshake refused (`sniStrict`)    |
 | `es-security-runas-user` with a tenant key                | Stripped: 200 (ES alone answers 403)   |

@@ -53,18 +53,18 @@ System, on 9.5.5:
 
 The key is admitted for `acme` if every check passes:
 
-| Field                                        | Must be                       | Rejects                                          |
-| -------------------------------------------- | ----------------------------- | ------------------------------------------------ |
-| `type`                                       | `rest`                        | cross-cluster keys                               |
-| `username`                                   | `elastic/fleet-server`        | keys created by users or other services          |
-| `realm`                                      | `_service_account`            | a user named `elastic/fleet-server`              |
-| `metadata.managed_by`                        | `fleet-server`                |                                                  |
-| `metadata.managed`                           | `true`                        |                                                  |
-| `metadata.type`                              | `output`                      | Fleet Server's other keys, such as access keys   |
-| `metadata.agent_id`                          | present                       |                                                  |
-| `invalidated`                                | `false`                       | revoked keys                                     |
-| `expiration`                                 | empty or in the future        | expired keys                                     |
-| every `role_descriptors.*.indices[].names[]` | ends in `-acme`, at least one | other tenants' keys, reroute grants (`logs-*-*`) |
+| Field                                        | Must be                       | Rejects                                                       |
+| -------------------------------------------- | ----------------------------- | ------------------------------------------------------------- |
+| `type`                                       | `rest`                        | cross-cluster keys                                            |
+| `username`                                   | `elastic/fleet-server`        | keys created by users or other services                       |
+| `realm`                                      | `_service_account`            | a user named `elastic/fleet-server`                           |
+| `metadata.managed_by`                        | `fleet-server`                |                                                               |
+| `metadata.managed`                           | `true`                        |                                                               |
+| `metadata.type`                              | `output`                      | Fleet Server's other keys, such as access keys                |
+| `metadata.agent_id`                          | present                       |                                                               |
+| `invalidated`                                | `false`                       | revoked keys                                                  |
+| `expiration`                                 | empty or in the future        | expired keys                                                  |
+| every `role_descriptors.*.indices[].names[]` | ends in `-acme`, at least one | other tenants' keys, namespace wildcards (`logs-kafka.log-*`) |
 
 Fleet builds every index name of an output key from the agent policy's namespace
 (`<type>-<dataset>-<namespace>`, plus Defend's hidden `.logs-endpoint.*` streams). A key

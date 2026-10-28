@@ -116,6 +116,8 @@ spec:
 ## Known limits
 
 - The key fields come from Fleet Server's implementation, not a documented contract.
-- Reroute-based integrations produce cross-tenant grants and are rejected.
+- Data streams with `dynamic_namespace: true` (about 68 in elastic/integrations, e.g.
+  Kafka logs, Docker container logs, Azure Metrics) get grants such as `logs-kafka.log-*`.
+  Keys of policies that use them are rejected.
 - Made-up key ids cost one Elasticsearch lookup each, at most 32 at a time per replica.
   Beyond that the authorizer answers 503.

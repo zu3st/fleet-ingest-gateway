@@ -59,7 +59,7 @@ mint() { # name agent_id index...
 }
 A=$(mint "gw-e2e-acme-$RUN" e2e-agent-acme logs-gateway.e2e-acme)
 B=$(mint "gw-e2e-globex-$RUN" e2e-agent-globex logs-gateway.e2e-globex)
-R=$(mint "gw-e2e-reroute-$RUN" e2e-agent-reroute logs-gateway.e2e-acme 'logs-*-*')
+R=$(mint "gw-e2e-wildcard-$RUN" e2e-agent-wildcard logs-gateway.e2e-acme 'logs-*-*')
 ADMIN=$(es POST /_security/api_key "{\"name\":\"gw-e2e-admin-$RUN\"}")
 enc() { printf '%s' "$1" | jq -r .encoded; }
 A_ID=$(printf '%s' "$A" | jq -r .id)
@@ -86,7 +86,7 @@ check "Tenant A key at B host" 403 "$(gw globex GET / -H "Authorization: $A_KEY"
 check "Tenant B key at A host" 403 "$(gw acme POST /_bulk -H "Authorization: $B_KEY" --data-binary x)"
 check "elastic Basic auth" 401 "$(gw acme GET / -u "elastic:$ELASTIC_PASSWORD")"
 check "Admin-created API key" 403 "$(gw acme GET / -H "Authorization: $ADMIN_KEY")"
-check "Key from a policy with reroute grants (logs-*-*)" 403 "$(gw acme GET / -H "Authorization: $R_KEY")"
+check "Key with a namespace wildcard (logs-*-*)" 403 "$(gw acme GET / -H "Authorization: $R_KEY")"
 check "No credentials" 401 "$(gw acme GET /)"
 check "Bearer token" 401 "$(gw acme GET / -H "Authorization: Bearer $token")"
 check "Path outside allowlist: GET /_cat/indices" 404 "$(gw acme GET /_cat/indices -H "Authorization: $A_KEY")"

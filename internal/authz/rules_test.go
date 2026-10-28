@@ -62,7 +62,7 @@ func TestKeyRules(t *testing.T) {
 		{"expired", func(k *APIKey) { k.Expiration = exp(now.UnixMilli() - 1) }, ReasonExpired},
 		{"not yet expired", func(k *APIKey) { k.Expiration = exp(now.UnixMilli() + 1000) }, ""},
 		{"no index grants", func(k *APIKey) { k.RoleDescriptors = map[string]roleDescriptor{} }, ReasonNoIndices},
-		{"reroute grant", func(k *APIKey) { addIndex(k, "logs*") }, ReasonForeignIndex},
+		{"namespace wildcard", func(k *APIKey) { addIndex(k, "logs*") }, ReasonForeignIndex},
 		{"other tenant's stream", func(k *APIKey) { addIndex(k, "logs-system.syslog-globex") }, ReasonForeignIndex},
 		{"regex grant", func(k *APIKey) { addIndex(k, "/logs-.*-acme/") }, ReasonForeignIndex},
 		{"wildcard within tenant", func(k *APIKey) { addIndex(k, "logs-*-acme") }, ""},
