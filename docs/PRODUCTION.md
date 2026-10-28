@@ -116,7 +116,6 @@ spec:
 ## Known limits
 
 - A leaked enrollment token lets an outsider enroll an agent and get a valid tenant key.
-- Kibana and Fleet Server are outside the gateway.
 - The key fields come from Fleet Server's implementation, not a documented contract.
 - Reroute-based integrations produce cross-tenant grants and are rejected.
 - While the authorizer is down, Traefik answers 500 and agents retry.
